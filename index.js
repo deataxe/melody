@@ -1152,12 +1152,12 @@ var game = {
 		for (let i = 0 ; i < 3 ; i++) {			
 			let obj = objects['opt_'+i];
 			obj.t.text = midi_songs[game.songs_opt[i]][0] + "-" +  midi_songs[game.songs_opt[i]][1];
-			await anim2.add(obj,{alpha:[0, 1],x:[-200, obj.sx]}, true, 0.05,'easeOutBack');			
+			await anim2.add(obj,{x:[-200, obj.sx]}, true, 0.05,'easeOutBack');			
 		}
 		for (let i = 3 ; i < 6 ; i++) {			
 			let obj = objects['opt_'+i];
 			obj.t.text = midi_songs[game.songs_opt[i]][0] + "-" +  midi_songs[game.songs_opt[i]][1];
-			await anim2.add(obj,{alpha:[0, 1],x:[450, obj.sx]}, true, 0.05,'easeOutBack');			
+			await anim2.add(obj,{x:[450, obj.sx]}, true, 0.05,'easeOutBack');			
 		}
 		
 		
@@ -1235,9 +1235,15 @@ var game = {
 		g_process = function() {};
 		
 		await big_message.show(result,')))');
-		for (let i = 0 ; i < 6 ; i++) {			
+		for (let i = 0 ; i < 3 ; i++) {			
 			let obj = objects['opt_'+i];
-			await anim2.add(obj,{alpha:[1, 0],x:[obj.sx, obj.sx-50],y:[obj.sy, obj.sy-50]}, false, 0.06,'easeInBack');			
+			obj.t.text = midi_songs[game.songs_opt[i]][0] + "-" +  midi_songs[game.songs_opt[i]][1];
+			await anim2.add(obj,{x:[ obj.sx,-200]}, false, 0.05,'easeOutBack');			
+		}
+		for (let i = 3 ; i < 6 ; i++) {			
+			let obj = objects['opt_'+i];
+			obj.t.text = midi_songs[game.songs_opt[i]][0] + "-" +  midi_songs[game.songs_opt[i]][1];
+			await anim2.add(obj,{x:[obj.sx,450]}, false, 0.05,'easeOutBack');			
 		}
 		
 		main_menu.activate();
