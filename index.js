@@ -1243,7 +1243,7 @@ var game = {
 		for (let i = 3 ; i < 6 ; i++) {			
 			let obj = objects['opt_'+i];
 			obj.t.text = midi_songs[game.songs_opt[i]][0] + "-" +  midi_songs[game.songs_opt[i]][1];
-			await anim2.add(obj,{x:[obj.sx,450]}, false, 0.05,'easeOutBack');			
+			await anim2.add(obj,{x:[obj.sx,450]}, false, 0.05,'easeInBack');			
 		}
 		
 		main_menu.activate();
