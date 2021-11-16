@@ -1021,18 +1021,18 @@ function load_resources() {
 	//короткая ссылка на ресурсы
 	gres=game_res.resources;
 	
-	//let git_src="https://akukamil.github.io/puzzle/"
-	let git_src=""
+	let git_src="https://akukamil.github.io/melody/"
+	//let git_src=""
 	
 	game_res.add("m2_font", git_src+"m_font.fnt");
 
 
-	game_res.add('message',git_src+'/sounds/message.mp3');
-	game_res.add('click',git_src+'/sounds/click.wav');
-	game_res.add('close',git_src+'/sounds/close.mp3');
-	game_res.add('lose',git_src+'/sounds/lose.mp3');
-	game_res.add('locked',git_src+'/sounds/locked.mp3');
-	game_res.add('applause',git_src+'/sounds/applause.mp3');
+	game_res.add('message',git_src+'sounds/message.mp3');
+	game_res.add('click',git_src+'sounds/click.wav');
+	game_res.add('close',git_src+'sounds/close.mp3');
+	game_res.add('lose',git_src+'sounds/lose.mp3');
+	game_res.add('locked',git_src+'sounds/locked.mp3');
+	game_res.add('applause',git_src+'sounds/applause.mp3');
 	
     //добавляем из листа загрузки
     for (var i = 0; i < load_list.length; i++) {
