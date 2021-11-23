@@ -1307,26 +1307,7 @@ var game = {
 			}		
 		}
 		
-		console.log(game.total_notes);
-	
-		
 
-		game.player.removeListener(); // removes current listener.
-		game.player.addListener(function(data) { // set it to your own function!
-			var now = data.now; // where we are now
-			var end = data.end; // time when song ends
-			var channel = data.channel; // channel note is playing on
-			var message = data.message; // 128 is noteOff, 144 is noteOn
-			var note = data.note; // the note
-			var velocity = data.velocity; // the velocity of the note
-									
-			game.last_play_event = game_tick;
-			
-			if (message === 144) {
-				
-				console.log (note, now, end, MIDI.Player.currentTime)
-			}
-		});
 	},
 	
 	add_sparkle : x => {
@@ -1390,6 +1371,11 @@ var game = {
 			obj.t.text = midi_songs[game.songs_opt[i]][0] + "-" +  midi_songs[game.songs_opt[i]][1];
 			await anim2.add(obj,{x:[obj.sx,450]}, false, 0.05,'easeInBack');			
 		}
+		
+		
+		objects.faling_notes.forEach(i=>{
+			i.visible = false;
+		})
 		
 		main_menu.activate();
 		
