@@ -1125,6 +1125,7 @@ var game = {
 	total_notes : 0,
 	faling_notes_shift : 0,
 	song_length : 0,
+	avr_dif : 0,
 	start_time : 0,
 	songs_opt : [],
 	player : {},
@@ -1264,8 +1265,24 @@ var game = {
 		
 		game.faling_notes_shift = 0;
 		game.total_notes = 0;
+		game.avr_dif = 0;
 		let last_note_time = 0;
 
+		game.player.removeListener(); // removes current listener.
+		game.player.addListener(function(data) { // set it to your own function!
+			var now = data.now; // where we are now
+			var end = data.end; // time when song ends
+			var channel = data.channel; // channel note is playing on
+			var message = data.message; // 128 is noteOff, 144 is noteOn
+
+				
+			
+			if (message === 144) {
+				let cur_time = Date.now() - game.start_time;
+				game.avr_dif += (cur_time - now )
+				//console.log(Date.now() - game.start_time,now, game.player.currentTime)		
+			}
+		});
 	
 		//определяем параметры песни
 		let min_note = 9999;
@@ -1344,11 +1361,13 @@ var game = {
 			}
 			
 			
-			if (dif > game.song_length + 3000)
-				game.close("Не ответили");			
+			if (dif > game.song_length + 3000) {
+				alert(game.avr_dif / game.total_notes)
+				game.close("Не ответили");						
+			}
+	
 			
-			
-			
+
 		}
 
 	},
