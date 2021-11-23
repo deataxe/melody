@@ -1260,7 +1260,7 @@ var game = {
 	
 		await game.load_midi_file(game.songs_opt[game.song_id],'acoustic_guitar_steel');
 		let notes = await game.start_player();
-		game.start_time = Date.now();
+		game.start_time = Date.now()-14;
 		state = "playing";
 		
 		game.faling_notes_shift = 0;
