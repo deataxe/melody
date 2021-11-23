@@ -1,7 +1,6 @@
 var M_WIDTH = 450, M_HEIGHT = 800, game_platform="", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="";
 var g_process = () => {};
-
-let midi_songs=[["2Маши","Босая"],["Adele","Hello"],["Adele","Rolling In The Deep"],["Adele","Rolling In The Deep"],["ArianaGrande","7Rings"],["ArianaGrande","into you"],["ArianaGrande","One Last Time"],["Artik & Asti","Девочка Танцуй"],["Artik & Asti","Истеричка"],["Ava Max","So Am I"],["Ava Max","Sweet But Psyco"],["Bebe Rexha","I Got You"],["Bruno Mars","Grenade"],["Charlie Puth","Attention"],["Dabro","На часах ноль ноль"],["Dabro","Услышит Весь Район"],["Dabro","Юность"],["Doja Cat","Say So"],["Dotan","Numb"],["Dua Lipa","Break My Heart"],["Dua Lipa","Don't Start Now"],["Dua Lipa","Physical"],["Ed Sheeran","Afterglow"],["Ed Sheeran","Bad Habits"],["Ed Sheeran","Shape of You"],["Foushee","Deep End"],["Imagine Dragons","Believer"],["Inna","Flashbacks"],["Jason Derulo","it girl"],["Jason Derulo","Take You Dancing"],["Jonas Brothers","Sucker"],["Jony","Комета"],["Katy Perry","Hot N Cold"],["Katy Perry","I Kissed A Girl"],["Kazka","Плакала"],["Maroon 5","Animals"],["Maroon 5","She Will Be Loved"],["Mary Gu","Косички"],["Meghan Trainor","All About That Bass"],["Mozdi","Zavtra"],["Niletto","Любимка"],["Rita Ora","Anywhere"],["Rita Ora","I Will Never Let You Down"],["Rita Ora","Let You Love Me"],["Время и Стекло","Имя 505"],["Серебро","Мало Тебя"],["Серебро","Между Нами Любовь"],["Серебро","Отпусти Меня"]];
+var g_instrument ={};
 
 rnd= Math.random;
 rnd2= function(min,max) {	
@@ -320,7 +319,7 @@ class song_opt_class extends PIXI.Container {
 		this.bcg.pointerout=function(){this.tint=0xffffff};		
 		var cid = this.id;
 		this.bcg.pointerdown = function(){game.opt_down(cid)};
-		this.t=new PIXI.BitmapText('-', {fontName: 'Century Gothic', fontSize: 20});		
+		this.t=new PIXI.BitmapText('-', {fontName: 'Century Gothic', fontSize: 25});		
 		this.t.anchor.set(0.5,0.5);
 		this.t.maxWidth = w-30;
 		this.t.x = w/2;
@@ -855,7 +854,8 @@ var lb={
 function init_game_env() {
 			
 			
-	//загружаем звуковой шрифт
+	//загружаем звуковой шрифт	
+	/*
 	MIDI.loadPlugin({
 		soundfontUrl: "soundfont/",
 		onprogress: function(state, progress) {
@@ -863,7 +863,7 @@ function init_game_env() {
 		onsuccess: function() {
 			console.log("Звуковой шрифт загружен")
 		}
-	});
+	});*/
 			
 	//инициируем файербейс
 	if (firebase.apps.length===0) {
@@ -1014,18 +1014,48 @@ function init_game_env() {
     main_loop();
 }
 
+async function analise_midi() {	
+	
+	for (let i = 0 ; i < Object.keys(midi_songs).length; i++ ) {
+		
+		let path ='midi/'+i+'.mid'
+		const midi = await Midi.fromUrl(path)
+		let n = midi.tracks[1].notes;
+		let min_note = 9999;
+		let max_note = -9999;
+		
+		for (let z =0 ; z < n.length;z++) {
+			let note_num = n[z].midi;
+			if (note_num<min_note)
+				min_note = note_num				
+			if (note_num>max_note)
+				max_note=note_num
+		}
+	
+		console.log (i +'_' + (max_note-min_note))
+		
+	}
+
+
+}
+
 function load_resources() {
 
+	
+	//analise_midi();
+	//return;
+	
     game_res = new PIXI.Loader();
 		
 	//короткая ссылка на ресурсы
 	gres=game_res.resources;
 	
-	let git_src="https://akukamil.github.io/melody/"
-	//let git_src=""
+	//let git_src="https://akukamil.github.io/melody/"
+	let git_src=""
+	
+
 	
 	game_res.add("m2_font", git_src+"m_font.fnt");
-
 
 	game_res.add('message',git_src+'sounds/message.mp3');
 	game_res.add('click',git_src+'sounds/click.wav');
@@ -1092,15 +1122,62 @@ var game = {
 	play_start : 0,
 	last_play_event : 0,
 	song_id : 0,
+	total_notes : 0,
+	faling_notes_shift : 0,
+	song_length : 0,
+	start_time : 0,
 	songs_opt : [],
 	player : {},
 
+	
+	load_midi_file : async (midi_id, instrument) => {		
+		return new Promise(function(resolve, reject) {			
+			MIDI.Player.loadFile("midi/"+midi_id +".mid", () =>{
+				resolve()
+			},null,null,instrument);			
+		})	
+	},
+	
+	load_insturment_script : async (instrument) => {
+		
+		if (window[instrument] !== undefined)
+			return;
+	
+		return new Promise((resolve, reject) => {				
+			const script = document.createElement('script')
+			script.type = 'text/javascript'
+			script.onload = resolve
+			script.onerror = reject
+			script.src = 'soundfont/' + instrument + '-mp3.js'
+			document.head.appendChild(script)
+		})		
+	},
+	
+	load_insturment : async (instrument) => {
+		
+		if (instrument === undefined)
+			alert("Инструмент не найден " + instrument);
+	
+		g_instrument = new Tone.Sampler({urls: instrument,baseUrl: ""}).toDestination();
+
+		await Tone.loaded();
+		
+	},
+	
+	start_player : async () => {
+		
+		return new Promise((resolve, reject) => {				
+			game.player.start(t=>{
+				resolve(t);				
+			});
+		})		
+	},
 	
 	get_opt : () => {
 		
 		let cur_arr = [];
 		
-		let max_val = midi_songs.length;
+		let max_val = Object.keys(midi_songs).length;
 		
 		while (cur_arr.length !== 6) {			
 			let id = irnd(0, max_val);
@@ -1133,15 +1210,14 @@ var game = {
 	
 	activate : async () => {
 		
-		objects.ready_note.text = "Внимание!"
-		await anim2.add(objects.ready_note,{alpha:[0, 1]}, true, 0.01,'linear');	
-		await anim2.add(objects.ready_note,{alpha:[1, 0]}, false, 0.01,'linear');	
+		//objects.ready_note.text = "Внимание!"
+		//await anim2.add(objects.ready_note,{alpha:[0, 1]}, true, 0.01,'linear');	
+		//await anim2.add(objects.ready_note,{alpha:[1, 0]}, false, 0.01,'linear');	
 		objects.ready_note.text = "Слушаем..."
 		await anim2.add(objects.ready_note,{alpha:[0, 1]}, true, 0.01,'linear');	
 		await anim2.add(objects.ready_note,{alpha:[1, 0]}, false, 0.01,'linear');	
 		
-
-		
+	
 		//получаем набор вариантов
 		game.songs_opt = game.get_opt();
 		
@@ -1169,23 +1245,72 @@ var game = {
 		
 	},
 	
-	play_midi : () => {
+	play_midi : async () => {
 		
 		
 		//выбираем случайную песню
 		game.player = MIDI.Player;
 		game.player.timeWarp = 1.25; // speed the song is played back
-		let total_notes = 0;
+		
 		let artist = midi_songs[game.songs_opt[game.song_id]][0];
 		let song = midi_songs[game.songs_opt[game.song_id]][1];
-		console.log(`Играем: ${artist} - ${song}`)
+		console.log(`Играем: ${artist} - ${song} №${game.songs_opt[game.song_id]}`)
 		
-		game.player.loadFile("midi/"+game.songs_opt[game.song_id] +".mid", () =>{
-			state = "playing";
-			game.player.start();
-		});			
+	
+		await game.load_midi_file(game.songs_opt[game.song_id],'acoustic_guitar_steel');
+		let notes = await game.start_player();
+		game.start_time = Date.now();
+		state = "playing";
 		
-		let fin_notes =0;
+		game.faling_notes_shift = 0;
+		game.total_notes = 0;
+		let last_note_time = 0;
+
+	
+		//определяем параметры песни
+		let min_note = 9999;
+		let max_note = -9999;
+		for (let i = 0 ; i < Object.keys(notes).length ; i++) {
+			if (notes[i].event.subtype === 'noteOn') {				
+				game.song_length = notes[i].time;
+				game.total_notes ++;		
+				let note_num = notes[i].event.noteNumber;
+				note_num > max_note && (max_note = note_num);
+				note_num < min_note && (min_note = note_num);
+				
+				//ищем конец ноты
+				for (let j = i+1 ; j < Object.keys(notes).length ; j++) {
+					if (notes[j].event.subtype === 'noteOff') {		
+						let off_note_num = notes[j].event.noteNumber;
+						if (note_num === off_note_num) {
+							notes[i].end_time = notes[j].time;
+							break;
+						}					
+					}
+				}
+				
+			}		
+		}
+		
+		//определяем падающие ноты
+		let iter = 0;
+		for (let i = 0 ; i < Object.keys(notes).length ; i++) {
+			if (notes[i].event.subtype === 'noteOn') {				
+				let note_num = notes[i].event.noteNumber;
+				let note_height = 2000 * (notes[i].end_time - notes[i].time) / game.song_length;
+				//objects.faling_notes[iter].height = note_height;
+				objects.faling_notes[iter].x = 400 * (note_num - min_note) / (max_note - min_note) + 25;
+				objects.faling_notes[iter].sy = objects.faling_notes[iter].y = 350 - 2000 * notes[i].time / game.song_length;
+				objects.faling_notes[iter].visible = true;
+				objects.faling_notes[iter].tint = rnd2(0.5,1) * 0xffffff;
+				iter ++;
+			}		
+		}
+		
+		console.log(game.total_notes);
+	
+		
+
 		game.player.removeListener(); // removes current listener.
 		game.player.addListener(function(data) { // set it to your own function!
 			var now = data.now; // where we are now
@@ -1199,42 +1324,62 @@ var game = {
 			
 			if (message === 144) {
 				
-				for (let i =0 ; i < 30 ; i++) {
-					
-					if (objects.stars[i].visible === false) {									
-						
-						objects.stars[i].tint = Math.random() * 0xFFFFFF;
-						
-						anim2.add(objects.stars[i],{
-							x:[rnd2(100,350),225 + rnd2(-100,100)],
-							y:[rnd2(100,400),250 + rnd2(-100,100)],
-							alpha:[1,0],
-				
-							}, false, 0.005,'easeOutBack');		
-					
-						break;
-					}						
-				}					
+				console.log (note, now, end, MIDI.Player.currentTime)
 			}
 		});
+	},
+	
+	add_sparkle : x => {
+				
+		for (let i =0 ; i<objects.sparkles.length ; i++ ) {
+			if (objects.sparkles[i].visible === false) {				
 			
-
+				objects.sparkles[i].y = 350;
+				objects.sparkles[i].x = x;
+				anim2.add(objects.sparkles[i],{alpha:[0.8, 0]}, false, 0.02,'easeOutBack');
+				return;
+			}			
+		}
+		
 		
 	},
 	
-	process : () =>{
+	process : () => {
 		
-		if (game_tick > game.last_play_event +5)
-			game.close("Не ответили");
+		if (state === "playing") {
+			
+			let dif = Date.now() - game.start_time;
+			let shift_y = (Date.now() - game.start_time)/ game.song_length;
+			
+			for (let i = 0 ; i < game.total_notes ; i++) {
+				
+				objects.faling_notes[i].y = objects.faling_notes[i].sy + shift_y * 2000;
+				if (objects.faling_notes[i].y > 350 && objects.faling_notes[i].visible === true) {
+					
+					objects.faling_notes[i].visible = false;
+					game.add_sparkle(objects.faling_notes[i].x);					
+				}
+
+			}
+			
+			
+			if (dif > game.song_length + 3000)
+				game.close("Не ответили");			
+			
+			
+			
+		}
+
 	},
 	
 	close : async (result) => {
 		
 		state = "";
-		game.player.stop();
+		game.player.stop()
 		g_process = function() {};
 		
 		await big_message.show(result,')))');
+		
 		for (let i = 0 ; i < 3 ; i++) {			
 			let obj = objects['opt_'+i];
 			obj.t.text = midi_songs[game.songs_opt[i]][0] + "-" +  midi_songs[game.songs_opt[i]][1];
@@ -1257,9 +1402,7 @@ var cat_menu = {
 	
 	activate : () => {
 		
-		anim2.add(objects.cat_menu_cont,{
-			x:[450,objects.cat_menu_cont.sx],
-			}, true, 0.05,'linear');	
+		anim2.add(objects.cat_menu_cont,{x:[450,objects.cat_menu_cont.sx]}, true, 0.05,'linear');	
 		
 	},
 	
@@ -1287,14 +1430,13 @@ var main_menu = {
 	
 	activate : () => {
 		
-		anim2.add(objects.main_buttons_cont,{
-			x:[450,objects.main_buttons_cont.sx],
-			}, true, 0.05,'linear');	
-		
+		anim2.add(objects.main_buttons_cont,{y:[800,objects.main_buttons_cont.sy]}, true, 0.025,'easeOutBack');	
+		anim2.add(objects.guitar,{x:[-450,objects.guitar.sx]}, true, 0.025,'easeOutBack');	
+		anim2.add(objects.header0,{y:[-400,objects.header0.sy]}, true, 0.025,'easeOutBack');	
 	},
 	
 	next_down : () => {
-		
+
 		main_menu.close();		
 		cat_menu.activate();
 		
@@ -1302,9 +1444,9 @@ var main_menu = {
 	
 	close : () => {
 		
-		anim2.add(objects.main_buttons_cont,{
-			x:[objects.main_buttons_cont.x,-450],
-			}, false, 0.05,'linear');	
+		anim2.add(objects.main_buttons_cont,{y:[objects.main_buttons_cont.sy,800]}, false, 0.025,'easeInBack');	
+		anim2.add(objects.guitar,{x:[objects.guitar.sx,-450]}, false, 0.025,'easeInBack');	
+		anim2.add(objects.header0,{y:[objects.header0.sy,-400]}, false, 0.025,'easeInBack');
 	}
 	
 	

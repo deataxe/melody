@@ -62,7 +62,7 @@
 			/// check whether the note exists
 			var channel = root.channels[channelId];
 			var instrument = channel.instrument;
-			var bufferId = instrument + '' + noteId;
+			var bufferId = noteId;
 			var buffer = audioBuffers[bufferId];
 			if (!buffer) {
 // 				console.log(MIDI.GM.byId[instrument].id, instrument, channelId);
@@ -125,7 +125,7 @@
 			/// check whether the note exists
 			var channel = root.channels[channelId];
 			var instrument = channel.instrument;
-			var bufferId = instrument + '' + noteId;
+			var bufferId = noteId;
 			var buffer = audioBuffers[bufferId];
 			if (buffer) {
 				if (delay < ctx.currentTime) {
@@ -253,7 +253,7 @@
 					loadAudio(url, function(buffer) {
 						buffer.id = key;
 						var noteId = root.keyToNote[key];
-						audioBuffers[instrumentId + '' + noteId] = buffer;
+						audioBuffers[noteId] = buffer;
 						///
 						if (-- bufferPending[instrumentId] === 0) {
 							var percent = index / 87;

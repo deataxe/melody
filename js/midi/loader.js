@@ -87,7 +87,7 @@ MIDI.Player = MIDI.Player || {};
 	*/
 
 	root.loadResource = function(opts) {
-		var instruments = opts.instruments || opts.instrument || 'acoustic_grand_piano';
+		var instruments = opts.instruments || opts.instrument;
 		///
 		if (typeof instruments !== 'object') {
 			if (instruments || instruments === 0) {
