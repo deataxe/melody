@@ -1,4 +1,4 @@
-var M_WIDTH = 450, M_HEIGHT = 800, game_platform="", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="" , midi_calibration = 0;
+var M_WIDTH = 450, M_HEIGHT = 800, game_platform="", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="" , midi_calibration = -999;
 var g_process = () => {};
 var g_instrument ={};
 
@@ -1005,6 +1005,10 @@ function init_game_env() {
 
 async function calibrate_midi() {	
 	
+	if (midi_calibration !== -999)
+		return;
+	
+	
 	await new Promise(resolve => setTimeout(resolve, 3000));	
 	
 	MIDI.loadPlugin({
@@ -1229,7 +1233,7 @@ var game = {
 		game.song_id = irnd(0, 6);
 				
 		//показываеми варианты ответов
-		/*
+		
 		for (let i = 0 ; i < 3 ; i++) {			
 			let obj = objects['opt_'+i];
 			obj.t.text = midi_songs[game.songs_opt[i]][0] + "-" +  midi_songs[game.songs_opt[i]][1];
@@ -1240,7 +1244,7 @@ var game = {
 			obj.t.text = midi_songs[game.songs_opt[i]][0] + "-" +  midi_songs[game.songs_opt[i]][1];
 			await anim2.add(obj,{x:[450, obj.sx]}, true, 0.05,'easeOutBack');			
 		}
-		*/
+		
 		
 
 		g_process = function() {game.process()};
@@ -1262,8 +1266,8 @@ var game = {
 		console.log(`Играем: ${artist} - ${song} №${game.songs_opt[game.song_id]}`)
 			
 				
-		//await game.load_midi_file(game.songs_opt[game.song_id],'acoustic_guitar_steel');
-		await game.load_midi_file(0, 'acoustic_guitar_steel');
+		await game.load_midi_file(game.songs_opt[game.song_id],'acoustic_guitar_steel');
+		//await game.load_midi_file(0, 'acoustic_guitar_steel');
 		game.start_time = Date.now();
 		let notes = await game.start_player();
 		state = "playing";
