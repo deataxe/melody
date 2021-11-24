@@ -853,7 +853,7 @@ var lb={
 
 function init_game_env() {
 			
-	alert("Версия 4");
+
 	//загружаем звуковой шрифт	
 	/*
 	MIDI.loadPlugin({
@@ -1134,14 +1134,14 @@ var game = {
 
 	dec_shift : () => {
 		
-		game.my_shift -=5;
+		game.my_shift -=10;
 		objects.shift_t.text = game.my_shift;
 		
 	},
 	
 	inc_shift : () => {
 		
-		game.my_shift +=5;
+		game.my_shift +=10;
 		objects.shift_t.text = game.my_shift;
 	},
 	
@@ -1225,6 +1225,9 @@ var game = {
 	
 	activate : async () => {
 		
+		
+		window.my_console = objects.my_console;
+		
 		//objects.ready_note.text = "Внимание!"
 		//await anim2.add(objects.ready_note,{alpha:[0, 1]}, true, 0.01,'linear');	
 		//await anim2.add(objects.ready_note,{alpha:[1, 0]}, false, 0.01,'linear');	
@@ -1263,6 +1266,8 @@ var game = {
 	play_midi : async () => {
 		
 		
+
+		
 		//выбираем случайную песню
 		game.player = MIDI.Player;
 		game.player.timeWarp = 1.25; // speed the song is played back
@@ -1274,9 +1279,27 @@ var game = {
 	
 		//await game.load_midi_file(game.songs_opt[game.song_id],'acoustic_guitar_steel');
 		await game.load_midi_file(0,'acoustic_guitar_steel');
+		
+		MIDI.noteOn(0, 75, 127, 0);
+		
+		await new Promise(resolve => setTimeout(resolve, 5000));		
+		
+		
 		game.start_time = Date.now();		
 		let notes = await game.start_player();
-		console.log ("game.start_player()")
+		
+		//window.my_console.text +=Date.now();		
+		//window.my_console.text +='\n';	
+		
+
+		
+		//MIDI.noteOn(0, 65, 127, 3);
+		/*setTimeout(function(){
+			game.add_sparkle(200);
+			window.my_console.text +=Date.now();		
+			window.my_console.text +='\n';	
+		},3000);
+		console.log ("game.start_player()")*/
 		
 		state = "playing";
 		
@@ -1284,7 +1307,8 @@ var game = {
 		game.total_notes = 0;
 		game.avr_dif = 0;
 		let last_note_time = 0;
-
+		
+		/*
 		game.player.removeListener(); // removes current listener.
 		game.player.addListener(function(data) { // set it to your own function!
 			var now = data.now; // where we are now
@@ -1297,7 +1321,7 @@ var game = {
 				game.avr_dif += (cur_time - now)
 				//console.log(cur_time, now, cur_time-now)		
 			}
-		});
+		});*/
 	
 		//определяем параметры песни
 		let min_note = 9999;
