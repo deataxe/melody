@@ -1,4 +1,4 @@
-var M_WIDTH = 450, M_HEIGHT = 800, game_platform="", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="";
+var M_WIDTH = 450, M_HEIGHT = 800, game_platform="", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="" , midi_calibration = 0;
 var g_process = () => {};
 var g_instrument ={};
 
@@ -853,18 +853,7 @@ var lb={
 
 function init_game_env() {
 			
-
-	//загружаем звуковой шрифт	
-	/*
-	MIDI.loadPlugin({
-		soundfontUrl: "soundfont/",
-		onprogress: function(state, progress) {
-		},
-		onsuccess: function() {
-			console.log("Звуковой шрифт загружен")
-		}
-	});*/
-			
+		
 	//инициируем файербейс
 	if (firebase.apps.length===0) {
 		firebase.initializeApp({
@@ -1014,27 +1003,25 @@ function init_game_env() {
     main_loop();
 }
 
-async function analise_midi() {	
+async function calibrate_midi() {	
 	
-	for (let i = 0 ; i < Object.keys(midi_songs).length; i++ ) {
-		
-		let path ='midi/'+i+'.mid'
-		const midi = await Midi.fromUrl(path)
-		let n = midi.tracks[1].notes;
-		let min_note = 9999;
-		let max_note = -9999;
-		
-		for (let z =0 ; z < n.length;z++) {
-			let note_num = n[z].midi;
-			if (note_num<min_note)
-				min_note = note_num				
-			if (note_num>max_note)
-				max_note=note_num
+	await new Promise(resolve => setTimeout(resolve, 3000));	
+	
+	MIDI.loadPlugin({
+		instrument: "acoustic_guitar_steel", 
+		onsuccess: function() {
+			let ctx = MIDI.WebAudio.getContext();
+			let s_time = ctx.currentTime;
+			MIDI.noteOnCalibration(0, 75, 1, function(){
+
+
+				midi_calibration = ctx.currentTime - s_time - 2;
+				console.log(midi_calibration);
+				objects.my_console.text = midi_calibration;					
+			});
+			
 		}
-	
-		console.log (i +'_' + (max_note-min_note))
-		
-	}
+	});
 
 
 }
@@ -1152,7 +1139,7 @@ var game = {
 			},null,null,instrument);			
 		})	
 	},
-	
+		
 	load_insturment_script : async (instrument) => {
 		
 		if (window[instrument] !== undefined)
@@ -1226,7 +1213,6 @@ var game = {
 	activate : async () => {
 		
 		
-		window.my_console = objects.my_console;
 		
 		//objects.ready_note.text = "Внимание!"
 		//await anim2.add(objects.ready_note,{alpha:[0, 1]}, true, 0.01,'linear');	
@@ -1243,6 +1229,7 @@ var game = {
 		game.song_id = irnd(0, 6);
 				
 		//показываеми варианты ответов
+		/*
 		for (let i = 0 ; i < 3 ; i++) {			
 			let obj = objects['opt_'+i];
 			obj.t.text = midi_songs[game.songs_opt[i]][0] + "-" +  midi_songs[game.songs_opt[i]][1];
@@ -1253,7 +1240,7 @@ var game = {
 			obj.t.text = midi_songs[game.songs_opt[i]][0] + "-" +  midi_songs[game.songs_opt[i]][1];
 			await anim2.add(obj,{x:[450, obj.sx]}, true, 0.05,'easeOutBack');			
 		}
-		
+		*/
 		
 
 		g_process = function() {game.process()};
@@ -1265,9 +1252,7 @@ var game = {
 	
 	play_midi : async () => {
 		
-		
-
-		
+				
 		//выбираем случайную песню
 		game.player = MIDI.Player;
 		game.player.timeWarp = 1.25; // speed the song is played back
@@ -1275,54 +1260,23 @@ var game = {
 		let artist = midi_songs[game.songs_opt[game.song_id]][0];
 		let song = midi_songs[game.songs_opt[game.song_id]][1];
 		console.log(`Играем: ${artist} - ${song} №${game.songs_opt[game.song_id]}`)
-		
-	
+			
+				
 		//await game.load_midi_file(game.songs_opt[game.song_id],'acoustic_guitar_steel');
-		await game.load_midi_file(0,'acoustic_guitar_steel');
-		
-		MIDI.noteOn(0, 75, 127, 0);
-		
-		await new Promise(resolve => setTimeout(resolve, 5000));		
-		
-		
-		game.start_time = Date.now();		
+		await game.load_midi_file(0, 'acoustic_guitar_steel');
+		game.start_time = Date.now();
 		let notes = await game.start_player();
-		
-		//window.my_console.text +=Date.now();		
-		//window.my_console.text +='\n';	
-		
-
-		
-		//MIDI.noteOn(0, 65, 127, 3);
-		/*setTimeout(function(){
-			game.add_sparkle(200);
-			window.my_console.text +=Date.now();		
-			window.my_console.text +='\n';	
-		},3000);
-		console.log ("game.start_player()")*/
-		
 		state = "playing";
+		
 		
 		game.faling_notes_shift = 0;
 		game.total_notes = 0;
 		game.avr_dif = 0;
 		let last_note_time = 0;
 		
-		/*
-		game.player.removeListener(); // removes current listener.
-		game.player.addListener(function(data) { // set it to your own function!
-			var now = data.now; // where we are now
-			var end = data.end; // time when song ends
-			var channel = data.channel; // channel note is playing on
-			var message = data.message; // 128 is noteOff, 144 is noteOn
-			
-			if (message === 144) {
-				let cur_time = Date.now() - game.start_time;
-				game.avr_dif += (cur_time - now)
-				//console.log(cur_time, now, cur_time-now)		
-			}
-		});*/
-	
+		
+		
+		
 		//определяем параметры песни
 		let min_note = 9999;
 		let max_note = -9999;
@@ -1383,10 +1337,11 @@ var game = {
 	
 	process : () => {
 		
+		
 		if (state === "playing") {
 			
 			let dif = Date.now() - game.start_time;
-			let shift_y = (Date.now() - game.start_time-game.my_shift)/ game.song_length;
+			let shift_y = (Date.now() - game.start_time - midi_calibration*10000 - game.my_shift)/ game.song_length;
 			
 			for (let i = 0 ; i < game.total_notes ; i++) {
 				
@@ -1401,7 +1356,7 @@ var game = {
 			
 			
 			if (dif > game.song_length + 3000) {
-				alert(game.avr_dif / game.total_notes)
+				//alert(game.avr_dif / game.total_notes)
 				game.close("Не ответили");						
 			}
 	
@@ -1447,6 +1402,9 @@ var cat_menu = {
 	activate : () => {
 		
 		anim2.add(objects.cat_menu_cont,{x:[450,objects.cat_menu_cont.sx]}, true, 0.05,'linear');	
+		
+		//калибруем миди
+		calibrate_midi();
 		
 	},
 	
