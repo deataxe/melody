@@ -1274,8 +1274,10 @@ var game = {
 	
 		//await game.load_midi_file(game.songs_opt[game.song_id],'acoustic_guitar_steel');
 		await game.load_midi_file(0,'acoustic_guitar_steel');
+		game.start_time = Date.now();		
 		let notes = await game.start_player();
-		game.start_time = Date.now();
+		console.log ("game.start_player()")
+		
 		state = "playing";
 		
 		game.faling_notes_shift = 0;
@@ -1289,13 +1291,11 @@ var game = {
 			var end = data.end; // time when song ends
 			var channel = data.channel; // channel note is playing on
 			var message = data.message; // 128 is noteOff, 144 is noteOn
-
-				
 			
 			if (message === 144) {
 				let cur_time = Date.now() - game.start_time;
-				game.avr_dif += (cur_time - now )
-				console.log(cur_time, now, cur_time-now)		
+				game.avr_dif += (cur_time - now)
+				//console.log(cur_time, now, cur_time-now)		
 			}
 		});
 	
