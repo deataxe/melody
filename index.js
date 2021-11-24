@@ -1129,7 +1129,21 @@ var game = {
 	start_time : 0,
 	songs_opt : [],
 	player : {},
+	my_shift : 0,
 
+
+	dec_shift : () => {
+		
+		game.my_shift -=5;
+		objects.shift_t.text = game.my_shift;
+		
+	},
+	
+	inc_shift : () => {
+		
+		game.my_shift +=5;
+		objects.shift_t.text = game.my_shift;
+	},
 	
 	load_midi_file : async (midi_id, instrument) => {		
 		return new Promise(function(resolve, reject) {			
@@ -1348,7 +1362,7 @@ var game = {
 		if (state === "playing") {
 			
 			let dif = Date.now() - game.start_time;
-			let shift_y = (Date.now() - game.start_time-50)/ game.song_length;
+			let shift_y = (Date.now() - game.start_time-game.my_shift)/ game.song_length;
 			
 			for (let i = 0 ; i < game.total_notes ; i++) {
 				
