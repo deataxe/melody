@@ -853,7 +853,7 @@ var lb={
 
 function init_game_env() {
 			
-	alert("Версия 3");
+	alert("Версия 4");
 	//загружаем звуковой шрифт	
 	/*
 	MIDI.loadPlugin({
@@ -1458,3 +1458,4 @@ var main_menu = {
 	
 	
 }
+
