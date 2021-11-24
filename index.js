@@ -853,7 +853,7 @@ var lb={
 
 function init_game_env() {
 			
-			
+	alert("Версия 2");
 	//загружаем звуковой шрифт	
 	/*
 	MIDI.loadPlugin({
@@ -1050,8 +1050,8 @@ function load_resources() {
 	//короткая ссылка на ресурсы
 	gres=game_res.resources;
 	
-	let git_src="https://akukamil.github.io/melody/"
-	//let git_src=""
+	//let git_src="https://akukamil.github.io/melody/"
+	let git_src=""
 	
 
 	
@@ -1258,7 +1258,8 @@ var game = {
 		console.log(`Играем: ${artist} - ${song} №${game.songs_opt[game.song_id]}`)
 		
 	
-		await game.load_midi_file(game.songs_opt[game.song_id],'acoustic_guitar_steel');
+		//await game.load_midi_file(game.songs_opt[game.song_id],'acoustic_guitar_steel');
+		await game.load_midi_file(0,'acoustic_guitar_steel');
 		let notes = await game.start_player();
 		game.start_time = Date.now()-14;
 		state = "playing";
@@ -1280,7 +1281,7 @@ var game = {
 			if (message === 144) {
 				let cur_time = Date.now() - game.start_time;
 				game.avr_dif += (cur_time - now )
-				//console.log(Date.now() - game.start_time,now, game.player.currentTime)		
+				console.log(cur_time, now, cur_time-now)		
 			}
 		});
 	
@@ -1334,7 +1335,7 @@ var game = {
 			
 				objects.sparkles[i].y = 350;
 				objects.sparkles[i].x = x;
-				anim2.add(objects.sparkles[i],{alpha:[0.8, 0]}, false, 0.02,'easeOutBack');
+				anim2.add(objects.sparkles[i],{alpha:[0.8, 0]}, false, 0.08,'easeOutBack');
 				return;
 			}			
 		}
@@ -1347,7 +1348,7 @@ var game = {
 		if (state === "playing") {
 			
 			let dif = Date.now() - game.start_time;
-			let shift_y = (Date.now() - game.start_time)/ game.song_length;
+			let shift_y = (Date.now() - game.start_time-20)/ game.song_length;
 			
 			for (let i = 0 ; i < game.total_notes ; i++) {
 				
