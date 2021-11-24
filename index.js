@@ -1261,7 +1261,7 @@ var game = {
 		//await game.load_midi_file(game.songs_opt[game.song_id],'acoustic_guitar_steel');
 		await game.load_midi_file(0,'acoustic_guitar_steel');
 		let notes = await game.start_player();
-		game.start_time = Date.now()-14;
+		game.start_time = Date.now();
 		state = "playing";
 		
 		game.faling_notes_shift = 0;
@@ -1348,7 +1348,7 @@ var game = {
 		if (state === "playing") {
 			
 			let dif = Date.now() - game.start_time;
-			let shift_y = (Date.now() - game.start_time-20)/ game.song_length;
+			let shift_y = (Date.now() - game.start_time-50)/ game.song_length;
 			
 			for (let i = 0 ; i < game.total_notes ; i++) {
 				
