@@ -288,6 +288,7 @@ var startAudio = function(currentTime, fromCache, onsuccess) {
 	///
 	startTime = ctx.currentTime;
 	///
+
 	for (var n = 0; n < length && messages < 100; n++) {
 		var obj = data[n];
 		if ((queuedTime += obj[1]) <= currentTime) {
@@ -306,6 +307,7 @@ var startAudio = function(currentTime, fromCache, onsuccess) {
 		var channel = MIDI.channels[channelId];
 		var delay = ctx.currentTime + ((currentTime + foffset + midi.startDelay) / 1000);
 		var queueTime = queuedTime - offset + midi.startDelay;
+		//console.log(startTime);
 		switch (event.subtype) {
 			case 'controller':
 				MIDI.setController(channelId, event.controllerType, event.value, delay);

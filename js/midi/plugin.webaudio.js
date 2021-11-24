@@ -75,21 +75,8 @@
 			}
 		
 			/// create audio buffer
-			if (useStreamingBuffer) {
-				var source = ctx.createMediaElementSource(buffer);
-			} else { // XMLHTTP buffer
-				var source = ctx.createBufferSource();
-				source.buffer = buffer;
-			}
-
-			/// add effects to buffer
-			if (effects) {
-				var chain = source;
-				for (var key in effects) {
-					chain.connect(effects[key].input);
-					chain = effects[key];
-				}
-			}
+			var source = ctx.createBufferSource();
+			source.buffer = buffer;
 
 			/// add gain + pitchShift
 			var gain = (velocity / 127) * (masterVolume / 127) * 2 - 1;
@@ -100,19 +87,52 @@
 			source.gainNode.gain.value = Math.min(1.0, Math.max(-1.0, gain));
 			source.connect(source.gainNode);
 			///
-			if (useStreamingBuffer) {
-				if (delay) {
-					return setTimeout(function() {
-						buffer.currentTime = 0;
-						buffer.play()
-					}, delay * 1000);
-				} else {
-					buffer.currentTime = 0;
-					buffer.play()
-				}
-			} else {
-				source.start(delay || 0);
+
+			///
+			
+			source.start(delay || 0);	
+			///			
+
+			///
+			sources[channelId + '' + noteId] = source;
+			///
+			return source;
+		};
+		
+		midi.noteOnCalibration = function(channelId, noteId, velocity, end_callback) {
+
+			/// check whether the note exists
+			var channel = root.channels[channelId];
+			var instrument = channel.instrument;
+			var bufferId = noteId;
+			var buffer = audioBuffers[bufferId];
+			if (!buffer) {
+// 				console.log(MIDI.GM.byId[instrument].id, instrument, channelId);
+				return;
 			}
+
+		
+			/// create audio buffer
+			var source = ctx.createBufferSource();
+			source.buffer = buffer;
+
+			/// add gain + pitchShift
+			var gain = (velocity / 127) * (masterVolume / 127) * 2 - 1;
+			source.connect(ctx.destination);
+			source.playbackRate.value = 1; // pitch shift 
+			source.gainNode = ctx.createGain(); // gain
+			source.gainNode.connect(ctx.destination);
+			source.gainNode.gain.value = Math.min(1.0, Math.max(-1.0, gain));
+			source.connect(source.gainNode);
+			///
+
+			///
+			
+			source.start(ctx.currentTime + 1,0,1);	
+			source.onended = end_callback;
+			///
+			
+
 			///
 			sources[channelId + '' + noteId] = source;
 			///
