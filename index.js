@@ -1026,8 +1026,8 @@ var calibration = {
 			source.connect(source.gainNode);
 
 
-			source.start(audio_context.currentTime + time);		
-			source.stop(audio_context.currentTime + time + duration);
+			source.start(audio_context.currentTime + time,0,duration);		
+			//source.stop(audio_context.currentTime + time + duration);
 			source.onended = resolve;
 			
 		});		
@@ -1040,7 +1040,6 @@ var calibration = {
 		if (calibration.finished === 1)
 			return;
 		
-
 		
 		objects.my_console.text += 'wait 3 sec\n';
 		await new Promise(resolve => setTimeout(resolve, 3000));	
@@ -1051,11 +1050,14 @@ var calibration = {
 		let dif = 0;
 		let sum = 0;
 		
+		let start_time = 0;
+		let duration_time =0.01;
+		
 		for (let i=0;i<5;i++) {
 			
 			s_time = audio_context.currentTime;
-			await calibration.play_note(50+i,0,1);
-			dif = (audio_context.currentTime - s_time)-1;
+			await calibration.play_note(50+i,start_time,duration_time);
+			dif = (audio_context.currentTime - s_time)-start_time-duration_time;
 			sum += dif;
 			objects.my_console.text += dif;
 			objects.my_console.text += '\n';			
@@ -1213,8 +1215,7 @@ var game = {
 		var source = audio_context.createBufferSource();
 		source.buffer = instruments.buffers['acoustic_guitar_steel'][note_id];			
 		source.connect(audio_context.destination);			
-	
-		
+			
 		
 		source.gainNode = audio_context.createGain();
 		source.gainNode.connect(audio_context.destination);		
@@ -1475,7 +1476,7 @@ var game = {
 			
 			//сдесь секунды
 			let dif = (Date.now() - game.start_time) * 0.001;
-			let shift_y = (dif  - calibration.value * 5 - game.my_shift) / game.song_length;
+			let shift_y = (dif  -  game.my_shift) / game.song_length;
 			
 			for (let i = 0 ; i < game.total_notes ; i++) {
 				
