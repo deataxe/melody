@@ -1,4 +1,4 @@
-var M_WIDTH = 450, M_HEIGHT = 800, game_platform="", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="" , midi_calibration = -999;
+var M_WIDTH = 450, M_HEIGHT = 800, game_platform="", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="", audioCtx;
 var g_process = () => {};
 var g_instrument ={};
 
@@ -870,6 +870,8 @@ function init_game_env() {
 	document.getElementById("m_bar").outerHTML = "";
     document.getElementById("m_progress").outerHTML = "";
 
+	//создаем аудиоконтекст
+	audioCtx = new (window.AudioContext || window.webkitAudioContext)();	
 
     app = new PIXI.Application({width: M_WIDTH, height: M_HEIGHT, antialias: false, forceCanvas: false, backgroundAlpha:0.5});
     document.body.appendChild(app.view);
@@ -994,8 +996,6 @@ function init_game_env() {
 	});
 		
 	
-
-	
 	
 	main_menu.activate();
 	
@@ -1003,39 +1003,220 @@ function init_game_env() {
     main_loop();
 }
 
-async function calibrate_midi() {	
+var calibration = {
 	
-	if (midi_calibration !== -999)
-		return;
+	finished : 0,
+	value: 0,
 	
+	loadScript : src => {
+	  return new Promise((resolve, reject) => {
+		const script = document.createElement('script')
+		script.type = 'text/javascript'
+		script.onload = resolve
+		script.onerror = reject
+		script.src = src
+		document.head.appendChild(script)
+	  })
+	},
 	
-	await new Promise(resolve => setTimeout(resolve, 3000));	
-	
-	MIDI.loadPlugin({
-		instrument: "acoustic_guitar_steel", 
-		onsuccess: function() {
-			let ctx = MIDI.WebAudio.getContext();
-			let s_time = ctx.currentTime;
-			MIDI.noteOnCalibration(0, 75, 1, function(){
-
-
-				midi_calibration = ctx.currentTime - s_time - 2;
-				console.log(midi_calibration);
-				objects.my_console.text = midi_calibration;					
+	load_insturment : instrument => {
+		
+		return new Promise(resolve => {		
+			MIDI.loadPlugin({
+				instrument: instrument, 
+				onsuccess:resolve()
 			});
+		});		
+	},
+	
+	play_note : (note, delay, duration) => {
+		
+		return new Promise(resolve => {		
+			MIDI.noteOnCalibration(note, delay, duration, resolve);
+		});		
+		
+	},
+	
+	start : async () => {
+
+		
+		if (calibration.finished === 1)
+			return;
+		
+
+		objects.my_console.text += 'loading instrument\n';
+		await calibration.load_insturment('acoustic_guitar_steel');
+		
+		objects.my_console.text += 'wait 3 sec\n';
+		await new Promise(resolve => setTimeout(resolve, 3000));	
+		
+		objects.my_console.text += 'start calibration\n';
+		let ctx = MIDI.WebAudio.getContext();
+		let s_time =0;
+		let dif = 0;
+		let sum = 0;
+		
+		for (let i=0;i<5;i++) {
 			
+			s_time = ctx.currentTime;
+			await calibration.play_note(50+i,0,1);
+			dif = (ctx.currentTime - s_time)-1;
+			sum += dif;
+			objects.my_console.text += dif;
+			objects.my_console.text += '\n';			
 		}
-	});
-
-
+		
+		calibration.value = sum / 5;
+		
+		calibration.finished = 1;
+	}	
+	
 }
 
-function load_resources() {
 
+let keyToNote = {}; // C8  == 108
+let noteToKey = {}; // 108 ==  C8
+
+(function() {
+	var A0 = 0x15; // first note
+	var C8 = 0x6C; // last note
+	var number2key = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+	for (var n = A0; n <= C8; n++) {
+		var octave = (n - 12) / 12 >> 0;
+		var name = number2key[n % 12] + octave;
+		keyToNote[name] = n;
+		noteToKey[n] = name;
+	}
+})();
+
+
+var new_midi = {
+		
 	
-	//analise_midi();
-	//return;
+	_keyStr : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
+	instrument_buffer : {},
+	notes_buffer : {},
+	note_id : 0,
 	
+	/* will return a  Uint8Array type */
+	decodeArrayBuffer: function(input) {
+		var bytes = Math.ceil( (3*input.length) / 4.0);
+		var ab = new ArrayBuffer(bytes);
+		new_midi.decode(input, ab);
+
+		return ab;
+	},
+
+	decode: function(input, arrayBuffer) {
+		//get last chars to see if are valid
+		var lkey1 = new_midi._keyStr.indexOf(input.charAt(input.length-1));		 
+		var lkey2 = new_midi._keyStr.indexOf(input.charAt(input.length-1));		 
+
+		var bytes = Math.ceil( (3*input.length) / 4.0);
+		if (lkey1 == 64) bytes--; //padding chars, so skip
+		if (lkey2 == 64) bytes--; //padding chars, so skip
+
+		var uarray;
+		var chr1, chr2, chr3;
+		var enc1, enc2, enc3, enc4;
+		var i = 0;
+		var j = 0;
+
+		if (arrayBuffer)
+			uarray = new Uint8Array(arrayBuffer);
+		else
+			uarray = new Uint8Array(bytes);
+
+		input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+
+		for (i=0; i<bytes; i+=3) {	
+			//get the 3 octects in 4 ascii chars
+			enc1 = new_midi._keyStr.indexOf(input.charAt(j++));
+			enc2 = new_midi._keyStr.indexOf(input.charAt(j++));
+			enc3 = new_midi._keyStr.indexOf(input.charAt(j++));
+			enc4 = new_midi._keyStr.indexOf(input.charAt(j++));
+
+			chr1 = (enc1 << 2) | (enc2 >> 4);
+			chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+			chr3 = ((enc3 & 3) << 6) | enc4;
+
+			uarray[i] = chr1;			
+			if (enc3 != 64) uarray[i+1] = chr2;
+			if (enc4 != 64) uarray[i+2] = chr3;
+		}
+
+		return uarray;	
+	},
+	
+	loadScript : src => {
+	  return new Promise((resolve, reject) => {
+		const script = document.createElement('script')
+		script.type = 'text/javascript'
+		script.onload = resolve
+		script.onerror = reject
+		script.src = src
+		document.head.appendChild(script)
+	  })
+	},
+	
+	prepare_audio_buffers : async () => {
+				
+		for (let key in acoustic_guitar_steel) {
+			var base64 = acoustic_guitar_steel[key].split(',')[1];
+			var buffer = new_midi.decodeArrayBuffer(base64);
+			new_midi.instrument_buffer[key] = await audioCtx.decodeAudioData(buffer)
+		}		
+	},
+	
+	
+	
+	
+	activate : async () => {
+		
+		//загружаем миди файл
+		let midi = await Midi.fromUrl("midi/0.mid")
+		let notes = midi.tracks[0].notes;
+		
+		//загружаем инструмент
+		await new_midi.loadScript('soundfont/acoustic_guitar_steel-ogg.js');
+				
+		//создаем буферы аудиоданных инструмента
+		await new_midi.prepare_audio_buffers();
+		
+		//создаем расписание нот для проигрывания
+		notes.forEach(note => {					
+			new_midi.add_note(noteToKey[note.midi], note.time, note.duration);
+		})	
+
+		
+	},
+	
+	add_note : ( note_id, time, duration) => {
+				
+		//это источник звука
+		var source = audioCtx.createBufferSource();
+		source.buffer = new_midi.instrument_buffer[note_id];			
+		source.connect(audioCtx.destination);			
+		source.start(audioCtx.currentTime + time);		
+		
+		
+		source.gainNode = audioCtx.createGain();
+		source.gainNode.connect(audioCtx.destination);		
+		var gain = source.gainNode.gain;
+		gain.value = 1;
+		source.connect(source.gainNode);
+		
+		gain.linearRampToValueAtTime(gain.value, audioCtx.currentTime + time);
+		gain.linearRampToValueAtTime(-1.0, audioCtx.currentTime + time + duration);		
+		source.stop(audioCtx.currentTime + time + duration + 0.2);
+		
+	}
+	
+};
+
+function load_resources() {
+	
+		
     game_res = new PIXI.Loader();
 		
 	//короткая ссылка на ресурсы
@@ -1063,7 +1244,6 @@ function load_resources() {
 		
         if (load_list[i].class === "image")
             game_res.add(load_list[i].name, git_src+"res/" + load_list[i].name + "." +  load_list[i].image_format);
-		
 	}
 
 		
@@ -1121,7 +1301,102 @@ var game = {
 	songs_opt : [],
 	player : {},
 	my_shift : 0,
+	
+	_keyStr : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
+	instrument_buffer : {},
+	notes_buffer : {},
+	note_id : 0,
 
+	add_note : ( note_id, time, duration) => {
+				
+		//это источник звука
+		var source = audioCtx.createBufferSource();
+		source.buffer = game.instrument_buffer[note_id];			
+		source.connect(audioCtx.destination);			
+		source.start(audioCtx.currentTime + time);		
+		
+		
+		source.gainNode = audioCtx.createGain();
+		source.gainNode.connect(audioCtx.destination);		
+		var gain = source.gainNode.gain;
+		gain.value = 1;
+		source.connect(source.gainNode);
+		
+		gain.linearRampToValueAtTime(gain.value, audioCtx.currentTime + time);
+		gain.linearRampToValueAtTime(-1.0, audioCtx.currentTime + time + duration);		
+		source.stop(audioCtx.currentTime + time + duration + 0.2);
+		
+	},
+	
+	decodeArrayBuffer: function(input) {
+		var bytes = Math.ceil( (3*input.length) / 4.0);
+		var ab = new ArrayBuffer(bytes);
+		game.decode(input, ab);
+
+		return ab;
+	},
+
+	decode: function(input, arrayBuffer) {
+		//get last chars to see if are valid
+		var lkey1 = game._keyStr.indexOf(input.charAt(input.length-1));		 
+		var lkey2 = game._keyStr.indexOf(input.charAt(input.length-1));		 
+
+		var bytes = Math.ceil( (3*input.length) / 4.0);
+		if (lkey1 == 64) bytes--; //padding chars, so skip
+		if (lkey2 == 64) bytes--; //padding chars, so skip
+
+		var uarray;
+		var chr1, chr2, chr3;
+		var enc1, enc2, enc3, enc4;
+		var i = 0;
+		var j = 0;
+
+		if (arrayBuffer)
+			uarray = new Uint8Array(arrayBuffer);
+		else
+			uarray = new Uint8Array(bytes);
+
+		input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+
+		for (i=0; i<bytes; i+=3) {	
+			//get the 3 octects in 4 ascii chars
+			enc1 = game._keyStr.indexOf(input.charAt(j++));
+			enc2 = game._keyStr.indexOf(input.charAt(j++));
+			enc3 = game._keyStr.indexOf(input.charAt(j++));
+			enc4 = game._keyStr.indexOf(input.charAt(j++));
+
+			chr1 = (enc1 << 2) | (enc2 >> 4);
+			chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+			chr3 = ((enc3 & 3) << 6) | enc4;
+
+			uarray[i] = chr1;			
+			if (enc3 != 64) uarray[i+1] = chr2;
+			if (enc4 != 64) uarray[i+2] = chr3;
+		}
+
+		return uarray;	
+	},
+	
+	loadScript : src => {
+	  return new Promise((resolve, reject) => {
+		const script = document.createElement('script')
+		script.type = 'text/javascript'
+		script.onload = resolve
+		script.onerror = reject
+		script.src = src
+		document.head.appendChild(script)
+	  })
+	},
+	
+	prepare_audio_buffers : async () => {
+				
+		for (let key in acoustic_guitar_steel) {
+			var base64 = acoustic_guitar_steel[key].split(',')[1];
+			var buffer = game.decodeArrayBuffer(base64);
+			game.instrument_buffer[key] = await audioCtx.decodeAudioData(buffer)
+		}		
+	},
+	
 
 	dec_shift : () => {
 		
@@ -1134,49 +1409,6 @@ var game = {
 		
 		game.my_shift +=10;
 		objects.shift_t.text = game.my_shift;
-	},
-	
-	load_midi_file : async (midi_id, instrument) => {		
-		return new Promise(function(resolve, reject) {			
-			MIDI.Player.loadFile("midi/"+midi_id +".mid", () =>{
-				resolve()
-			},null,null,instrument);			
-		})	
-	},
-		
-	load_insturment_script : async (instrument) => {
-		
-		if (window[instrument] !== undefined)
-			return;
-	
-		return new Promise((resolve, reject) => {				
-			const script = document.createElement('script')
-			script.type = 'text/javascript'
-			script.onload = resolve
-			script.onerror = reject
-			script.src = 'soundfont/' + instrument + '-mp3.js'
-			document.head.appendChild(script)
-		})		
-	},
-	
-	load_insturment : async (instrument) => {
-		
-		if (instrument === undefined)
-			alert("Инструмент не найден " + instrument);
-	
-		g_instrument = new Tone.Sampler({urls: instrument,baseUrl: ""}).toDestination();
-
-		await Tone.loaded();
-		
-	},
-	
-	start_player : async () => {
-		
-		return new Promise((resolve, reject) => {				
-			game.player.start(t=>{
-				resolve(t);				
-			});
-		})		
 	},
 	
 	get_opt : () => {
@@ -1256,69 +1488,68 @@ var game = {
 	
 	play_midi : async () => {
 		
-				
-		//выбираем случайную песню
-		game.player = MIDI.Player;
-		game.player.timeWarp = 1.25; // speed the song is played back
 		
 		let artist = midi_songs[game.songs_opt[game.song_id]][0];
 		let song = midi_songs[game.songs_opt[game.song_id]][1];
 		console.log(`Играем: ${artist} - ${song} №${game.songs_opt[game.song_id]}`)
 			
 				
-		await game.load_midi_file(game.songs_opt[game.song_id],'acoustic_guitar_steel');
-		//await game.load_midi_file(0, 'acoustic_guitar_steel');
+				
+				
+		//загружаем миди файл
+		let midi = await Midi.fromUrl("midi/0.mid")
+		let notes = midi.tracks[0].notes;
+		
+		//загружаем инструмент
+		if (window['acoustic_guitar_steel'] === undefined)
+			await new_midi.loadScript('soundfont/acoustic_guitar_steel-ogg.js');
+				
+		//создаем буферы аудиоданных инструмента
+		await new_midi.prepare_audio_buffers();
+		
+		//создаем расписание нот для проигрывания
+		notes.forEach(note => {					
+			new_midi.add_note(noteToKey[note.midi], note.time, note.duration);
+		})	
+
+
+
+
+
+
 		game.start_time = Date.now();
-		let notes = await game.start_player();
 		state = "playing";
-		
-		
+				
 		game.faling_notes_shift = 0;
 		game.total_notes = 0;
 		game.avr_dif = 0;
 		let last_note_time = 0;
-		
-		
-		
-		
+				
 		//определяем параметры песни
 		let min_note = 9999;
 		let max_note = -9999;
-		for (let i = 0 ; i < Object.keys(notes).length ; i++) {
-			if (notes[i].event.subtype === 'noteOn') {				
-				game.song_length = notes[i].time;
-				game.total_notes ++;		
-				let note_num = notes[i].event.noteNumber;
-				note_num > max_note && (max_note = note_num);
-				note_num < min_note && (min_note = note_num);
-				
-				//ищем конец ноты
-				for (let j = i+1 ; j < Object.keys(notes).length ; j++) {
-					if (notes[j].event.subtype === 'noteOff') {		
-						let off_note_num = notes[j].event.noteNumber;
-						if (note_num === off_note_num) {
-							notes[i].end_time = notes[j].time;
-							break;
-						}					
-					}
-				}
-				
-			}		
+		for (let i = 0 ; i < notes.length ; i++) {
+			
+			game.song_length = notes[i].time;
+			game.total_notes ++;		
+			let note_num = notes[i].midi;
+			note_num > max_note && (max_note = note_num);
+			note_num < min_note && (min_note = note_num);
+
 		}
 		
 		//определяем падающие ноты
 		let iter = 0;
-		for (let i = 0 ; i < Object.keys(notes).length ; i++) {
-			if (notes[i].event.subtype === 'noteOn') {				
-				let note_num = notes[i].event.noteNumber;
-				let note_height = 2000 * (notes[i].end_time - notes[i].time) / game.song_length;
-				//objects.faling_notes[iter].height = note_height;
-				objects.faling_notes[iter].x = 400 * (note_num - min_note) / (max_note - min_note) + 25;
-				objects.faling_notes[iter].sy = objects.faling_notes[iter].y = 350 - 2000 * notes[i].time / game.song_length;
-				objects.faling_notes[iter].visible = true;
-				objects.faling_notes[iter].tint = rnd2(0.5,1) * 0xffffff;
-				iter ++;
-			}		
+		for (let i = 0 ; i < notes.length ; i++) {		
+		
+			let note_num = notes[i].midi;
+			//let note_height = 2000 * (notes[i].end_time - notes[i].time) / game.song_length;
+			//objects.faling_notes[iter].height = note_height;
+			objects.faling_notes[iter].x = irnd(100,400);//400 * (note_num - min_note) / (max_note - min_note) + 25;
+			objects.faling_notes[iter].sy = objects.faling_notes[iter].y = 350 - 2000 * notes[i].time / game.song_length;
+			objects.faling_notes[iter].visible = true;
+			objects.faling_notes[iter].tint = rnd2(0.5,1) * 0xffffff;
+			iter ++;
 		}
 		
 
@@ -1344,8 +1575,8 @@ var game = {
 		
 		if (state === "playing") {
 			
-			let dif = Date.now() - game.start_time;
-			let shift_y = (Date.now() - game.start_time - midi_calibration*10000 - game.my_shift)/ game.song_length;
+			let dif = (Date.now() - game.start_time) * 0.001;
+			let shift_y = (dif  - game.my_shift) / game.song_length;
 			
 			for (let i = 0 ; i < game.total_notes ; i++) {
 				
@@ -1373,7 +1604,6 @@ var game = {
 	close : async (result) => {
 		
 		state = "";
-		game.player.stop()
 		g_process = function() {};
 		
 		await big_message.show(result,')))');
@@ -1408,7 +1638,7 @@ var cat_menu = {
 		anim2.add(objects.cat_menu_cont,{x:[450,objects.cat_menu_cont.sx]}, true, 0.05,'linear');	
 		
 		//калибруем миди
-		calibrate_midi();
+		//calibration.start();
 		
 	},
 	
