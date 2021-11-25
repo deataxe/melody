@@ -1089,131 +1089,6 @@ let noteToKey = {}; // 108 ==  C8
 	}
 })();
 
-
-var new_midi = {
-		
-	
-	_keyStr : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
-	instrument_buffer : {},
-	notes_buffer : {},
-	note_id : 0,
-	
-	/* will return a  Uint8Array type */
-	decodeArrayBuffer: function(input) {
-		var bytes = Math.ceil( (3*input.length) / 4.0);
-		var ab = new ArrayBuffer(bytes);
-		new_midi.decode(input, ab);
-
-		return ab;
-	},
-
-	decode: function(input, arrayBuffer) {
-		//get last chars to see if are valid
-		var lkey1 = new_midi._keyStr.indexOf(input.charAt(input.length-1));		 
-		var lkey2 = new_midi._keyStr.indexOf(input.charAt(input.length-1));		 
-
-		var bytes = Math.ceil( (3*input.length) / 4.0);
-		if (lkey1 == 64) bytes--; //padding chars, so skip
-		if (lkey2 == 64) bytes--; //padding chars, so skip
-
-		var uarray;
-		var chr1, chr2, chr3;
-		var enc1, enc2, enc3, enc4;
-		var i = 0;
-		var j = 0;
-
-		if (arrayBuffer)
-			uarray = new Uint8Array(arrayBuffer);
-		else
-			uarray = new Uint8Array(bytes);
-
-		input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
-
-		for (i=0; i<bytes; i+=3) {	
-			//get the 3 octects in 4 ascii chars
-			enc1 = new_midi._keyStr.indexOf(input.charAt(j++));
-			enc2 = new_midi._keyStr.indexOf(input.charAt(j++));
-			enc3 = new_midi._keyStr.indexOf(input.charAt(j++));
-			enc4 = new_midi._keyStr.indexOf(input.charAt(j++));
-
-			chr1 = (enc1 << 2) | (enc2 >> 4);
-			chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
-			chr3 = ((enc3 & 3) << 6) | enc4;
-
-			uarray[i] = chr1;			
-			if (enc3 != 64) uarray[i+1] = chr2;
-			if (enc4 != 64) uarray[i+2] = chr3;
-		}
-
-		return uarray;	
-	},
-	
-	loadScript : src => {
-	  return new Promise((resolve, reject) => {
-		const script = document.createElement('script')
-		script.type = 'text/javascript'
-		script.onload = resolve
-		script.onerror = reject
-		script.src = src
-		document.head.appendChild(script)
-	  })
-	},
-	
-	prepare_audio_buffers : async () => {
-				
-		for (let key in acoustic_guitar_steel) {
-			var base64 = acoustic_guitar_steel[key].split(',')[1];
-			var buffer = new_midi.decodeArrayBuffer(base64);
-			new_midi.instrument_buffer[key] = await audioCtx.decodeAudioData(buffer)
-		}		
-	},
-	
-	
-	
-	
-	activate : async () => {
-		
-		//загружаем миди файл
-		let midi = await Midi.fromUrl("midi/0.mid")
-		let notes = midi.tracks[0].notes;
-		
-		//загружаем инструмент
-		await new_midi.loadScript('soundfont/acoustic_guitar_steel-ogg.js');
-				
-		//создаем буферы аудиоданных инструмента
-		await new_midi.prepare_audio_buffers();
-		
-		//создаем расписание нот для проигрывания
-		notes.forEach(note => {					
-			new_midi.add_note(noteToKey[note.midi], note.time, note.duration);
-		})	
-
-		
-	},
-	
-	add_note : ( note_id, time, duration) => {
-				
-		//это источник звука
-		var source = audioCtx.createBufferSource();
-		source.buffer = new_midi.instrument_buffer[note_id];			
-		source.connect(audioCtx.destination);			
-		source.start(audioCtx.currentTime + time);		
-		
-		
-		source.gainNode = audioCtx.createGain();
-		source.gainNode.connect(audioCtx.destination);		
-		var gain = source.gainNode.gain;
-		gain.value = 1;
-		source.connect(source.gainNode);
-		
-		gain.linearRampToValueAtTime(gain.value, audioCtx.currentTime + time);
-		gain.linearRampToValueAtTime(-1.0, audioCtx.currentTime + time + duration);		
-		source.stop(audioCtx.currentTime + time + duration + 0.2);
-		
-	}
-	
-};
-
 function load_resources() {
 	
 		
@@ -1222,8 +1097,8 @@ function load_resources() {
 	//короткая ссылка на ресурсы
 	gres=game_res.resources;
 	
-	let git_src="https://akukamil.github.io/melody/"
-	//let git_src=""
+	//let git_src="https://akukamil.github.io/melody/"
+	let git_src=""
 	
 
 	
@@ -1301,6 +1176,7 @@ var game = {
 	songs_opt : [],
 	player : {},
 	my_shift : 0,
+	audio_buffers :[],
 	
 	_keyStr : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
 	instrument_buffer : {},
@@ -1322,9 +1198,11 @@ var game = {
 		gain.value = 1;
 		source.connect(source.gainNode);
 		
+		game.audio_buffers.push(source);
+		
 		gain.linearRampToValueAtTime(gain.value, audioCtx.currentTime + time);
-		gain.linearRampToValueAtTime(-1.0, audioCtx.currentTime + time + duration);		
-		source.stop(audioCtx.currentTime + time + duration + 0.2);
+		gain.linearRampToValueAtTime(-1.0, audioCtx.currentTime + time + duration+1);		
+		source.stop(audioCtx.currentTime + time + duration + 1.2);
 		
 	},
 	
@@ -1397,7 +1275,6 @@ var game = {
 		}		
 	},
 	
-
 	dec_shift : () => {
 		
 		game.my_shift -=10;
@@ -1432,6 +1309,11 @@ var game = {
 		
 		if (state!=="playing")
 			return;
+		
+		game.audio_buffers.forEach(b=>{
+			b.stop();
+		});
+		game.audio_buffers = [];
 		
 		if (game.song_id === id) {
 			game_res.resources.applause.sound.play();
@@ -1493,28 +1375,27 @@ var game = {
 		let song = midi_songs[game.songs_opt[game.song_id]][1];
 		console.log(`Играем: ${artist} - ${song} №${game.songs_opt[game.song_id]}`)
 			
-				
-				
-				
+		game.audio_buffers =[];
+		
 		//загружаем миди файл
-		let midi = await Midi.fromUrl("midi/0.mid")
-		let notes = midi.tracks[0].notes;
+		let midi = await Midi.fromUrl("midi/"+game.songs_opt[game.song_id]+".mid")
+		let track_num =0 ;
+		if (midi.tracks.length === 2)
+			track_num = 1;
+		
+		let notes = midi.tracks[track_num].notes;
 		
 		//загружаем инструмент
 		if (window['acoustic_guitar_steel'] === undefined)
-			await new_midi.loadScript('soundfont/acoustic_guitar_steel-ogg.js');
+			await game.loadScript('soundfont/acoustic_guitar_steel-ogg.js');
 				
-		//создаем буферы аудиоданных инструмента
-		await new_midi.prepare_audio_buffers();
+		//создаем буферы аудиоданных инструмента  но нужно это заранее сделать
+		await game.prepare_audio_buffers();
 		
 		//создаем расписание нот для проигрывания
 		notes.forEach(note => {					
-			new_midi.add_note(noteToKey[note.midi], note.time, note.duration);
+			game.add_note(noteToKey[note.midi], note.time, note.duration);
 		})	
-
-
-
-
 
 
 		game.start_time = Date.now();
@@ -1552,7 +1433,6 @@ var game = {
 			iter ++;
 		}
 		
-
 	},
 	
 	add_sparkle : x => {
@@ -1623,6 +1503,8 @@ var game = {
 		objects.faling_notes.forEach(i=>{
 			i.visible = false;
 		})
+		
+
 		
 		main_menu.activate();
 		
