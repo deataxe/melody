@@ -1051,9 +1051,9 @@ var calibration = {
 		let sum = 0;
 		
 		let start_time = 0;
-		let duration_time =0.01;
+		let duration_time =0.001;
 		
-		for (let i=0;i<5;i++) {
+		for (let i=0;i<8;i++) {
 			
 			s_time = audio_context.currentTime;
 			await calibration.play_note(50+i,start_time,duration_time);
@@ -1063,8 +1063,10 @@ var calibration = {
 			objects.my_console.text += '\n';			
 		}
 		
-		calibration.value = sum / 5;
 		
+		calibration.value = sum / 8;
+		objects.my_console.text += dif;
+		objects.my_console.text += ' -- AVR\n';	
 		calibration.finished = 1;
 	}	
 	
@@ -1185,7 +1187,8 @@ var instruments = {
 			var buffer = game.decodeArrayBuffer(base64);			
 			instruments.buffers[instrument][key] = await audio_context.decodeAudioData(buffer)
 		}		
-		console.log (instrument, " загружен и обработан");
+		
+		objects.my_console.text += 'Инструмент загружен\n';	
 	}
 	
 }
@@ -1227,9 +1230,8 @@ var game = {
 		
 		gain.linearRampToValueAtTime(gain.value, audio_context.currentTime + time);
 		gain.linearRampToValueAtTime(-1.0, audio_context.currentTime + time + duration+1);		
-		
-		source.start(audio_context.currentTime + time);			
-		source.stop(audio_context.currentTime + time + duration + 1.2);
+
+		source.start(audio_context.currentTime + time, 0, duration + 1.2);			
 		
 	},
 	
@@ -1428,40 +1430,59 @@ var game = {
 		//определяем параметры песни
 		let min_note = 9999;
 		let max_note = -9999;
+		let unique_notes = {};
 		for (let i = 0 ; i < notes.length ; i++) {
 			
 			game.song_length = notes[i].time;
 			game.total_notes ++;		
 			let note_num = notes[i].midi;
+			unique_notes[note_num]=note_num;
 			note_num > max_note && (max_note = note_num);
 			note_num < min_note && (min_note = note_num);
-
 		}
+		
+		//делаем ноты по порядку (по возрастанию)		
+		let num_of_notes = Object.keys(unique_notes).length;
+		let note_width = 450 / num_of_notes;
+		let ind = 0;
+		for (key in unique_notes) {			
+			unique_notes[key] = ind;
+			ind++;			
+		}
+			
 		
 		//определяем падающие ноты
 		let iter = 0;
 		for (let i = 0 ; i < notes.length ; i++) {		
 		
 			let note_num = notes[i].midi;
-			//let note_height = 2000 * (notes[i].end_time - notes[i].time) / game.song_length;
-			//objects.faling_notes[iter].height = note_height;
-			objects.faling_notes[iter].x = irnd(100,400);//400 * (note_num - min_note) / (max_note - min_note) + 25;
+			let note_height = 2000 * notes[i].duration / game.song_length;
+			objects.faling_notes[iter].duration = notes[i].duration;
+			objects.faling_notes[iter].height = note_height - 3;
+			objects.faling_notes[iter].width = note_width-3;
+			objects.faling_notes[iter].x = 3 + unique_notes[note_num] * note_width;
 			objects.faling_notes[iter].sy = objects.faling_notes[iter].y = 350 - 2000 * notes[i].time / game.song_length;
 			objects.faling_notes[iter].visible = true;
-			objects.faling_notes[iter].tint = rnd2(0.5,1) * 0xffffff;
+			
+			let col =  rnd2(0.4,0.6);
+			objects.faling_notes[iter].tint = PIXI.utils.rgb2hex([col, 0, 0]);
+			objects.faling_notes[iter].played = 0;
 			iter ++;
 		}
 		
 	},
 	
-	add_sparkle : x => {
+	add_sparkle : (x, duration) => {
 				
 		for (let i =0 ; i<objects.sparkles.length ; i++ ) {
 			if (objects.sparkles[i].visible === false) {				
 			
 				objects.sparkles[i].y = 350;
 				objects.sparkles[i].x = x;
-				anim2.add(objects.sparkles[i],{alpha:[0.8, 0]}, false, 0.08,'easeOutBack');
+				
+					
+				//anim.add_scl({obj : objects.sparkles[i], param :'xy', val :[1,5], vis_on_end : false, func : 'linear', speed : 0.05});
+				anim2.add(objects.sparkles[i],{alpha:[1, 0]}, false, 1 / duration / 55,'linear');
 				return;
 			}			
 		}
@@ -1481,10 +1502,12 @@ var game = {
 			for (let i = 0 ; i < game.total_notes ; i++) {
 				
 				objects.faling_notes[i].y = objects.faling_notes[i].sy + shift_y * 2000;
-				if (objects.faling_notes[i].y > 350 && objects.faling_notes[i].visible === true) {
+				
+				
+				if (objects.faling_notes[i].y > 350 && objects.faling_notes[i].played === 0) {
 					
-					objects.faling_notes[i].visible = false;
-					game.add_sparkle(objects.faling_notes[i].x);					
+					objects.faling_notes[i].played = 1;
+					game.add_sparkle(objects.faling_notes[i].x + objects.faling_notes[i].width * 0.5, objects.faling_notes[i].duration );					
 				}
 
 			}			
