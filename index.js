@@ -1497,7 +1497,7 @@ var game = {
 			
 			//сдесь секунды
 			let dif = (Date.now() - game.start_time) * 0.001;
-			let shift_y = (dif  -  game.my_shift) / game.song_length;
+			let shift_y = (dif  - calibration.value*2 -  game.my_shift) / game.song_length;
 			
 			for (let i = 0 ; i < game.total_notes ; i++) {
 				
