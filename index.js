@@ -1459,7 +1459,7 @@ var game = {
 			let note_height = 2000 * notes[i].duration / game.song_length;
 			objects.faling_notes[iter].duration = notes[i].duration;
 			objects.faling_notes[iter].height = note_height - 3;
-			objects.faling_notes[iter].width = note_width-3;
+			objects.faling_notes[iter].width = note_width-6;
 			objects.faling_notes[iter].x = 3 + unique_notes[note_num] * note_width;
 			objects.faling_notes[iter].sy = objects.faling_notes[iter].y = 350 - 2000 * notes[i].time / game.song_length;
 			objects.faling_notes[iter].visible = true;
@@ -1509,6 +1509,11 @@ var game = {
 					objects.faling_notes[i].played = 1;
 					game.add_sparkle(objects.faling_notes[i].x + objects.faling_notes[i].width * 0.5, objects.faling_notes[i].duration );					
 				}
+				
+				if (objects.faling_notes[i].visible === true)
+					if (objects.faling_notes[i].y -objects.faling_notes[i].height  > 350)
+						objects.faling_notes[i].visible = false;
+				
 
 			}			
 			
