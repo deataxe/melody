@@ -13,173 +13,13 @@ irnd=function(min,max) {
     return Math.floor(Math.random() * (max - min)) + min;
 }
 
-var anim = {
-
+var anim2= {
+		
 	c1: 1.70158,
 	c2: 1.70158 * 1.525,
 	c3: 1.70158 + 1,
 	c4: (2 * Math.PI) / 3,
 	c5: (2 * Math.PI) / 4.5,
-
-	slot: [null, null, null, null, null, null, null, null, null, null, null],
-	linear: function(x) {
-		return x
-	},
-	linear_and_back: function(x) {
-
-		return x < 0.2 ? x * 5 : 1.25 - x * 1.25
-
-	},
-	easeOutElastic: function(x) {
-		return x === 0 ?
-			0 :
-			x === 1 ?
-			1 :
-			Math.pow(2, -10 * x) * Math.sin((x * 10 - 0.75) * this.c4) + 1;
-	},
-	easeOutBounce: function(x) {
-		const n1 = 7.5625;
-		const d1 = 2.75;
-
-		if (x < 1 / d1) {
-			return n1 * x * x;
-		} else if (x < 2 / d1) {
-			return n1 * (x -= 1.5 / d1) * x + 0.75;
-		} else if (x < 2.5 / d1) {
-			return n1 * (x -= 2.25 / d1) * x + 0.9375;
-		} else {
-			return n1 * (x -= 2.625 / d1) * x + 0.984375;
-		}
-	},
-	easeOutCubic: function(x) {
-		return 1 - Math.pow(1 - x, 3);
-	},
-	easeOutQuart: function(x) {
-		return 1 - Math.pow(1 - x, 4);
-	},
-	easeOutQuint: function(x) {
-		return 1 - Math.pow(1 - x, 5);
-	},
-	easeInCubic: function(x) {
-		return x * x * x;
-	},
-	easeInQuint: function(x) {
-		return x * x * x * x * x;
-	},	
-	easeInOutQuad: function(x) {
-		return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
-	},	
-	ease2back : function(x) {
-		return Math.sin(x*Math.PI*2);
-	},
-	easeOutBack: function(x) {
-		return 1 + this.c3 * Math.pow(x - 1, 3) + this.c1 * Math.pow(x - 1, 2);
-	},
-	easeInBack: function(x) {
-		return this.c3 * x * x * x - this.c1 * x * x;
-	},
-	add_scl: function(params) {
-
-		if (params.callback === undefined)
-			params.callback = () => {};
-
-		//ищем свободный слот для анимации
-		for (var i = 0; i < this.slot.length; i++) {
-
-			if (this.slot[i] === null) {
-
-				params.obj.visible = true;
-				params.obj.alpha = 1;
-				params.obj.ready = false;
-
-				var delta = params.val[1] - params.val[0];
-				this.slot[i] = {
-					obj: params.obj,
-					param: params.param,
-					vis_on_end: params.vis_on_end,
-					delta,
-					func: this[params.func].bind(anim),
-					start_val: params.val[0],
-					speed: params.speed,
-					progress: 0,
-					callback: params.callback
-				};
-				
-				if (params.param === 'x')
-					this.slot[i].process_func = this.process_scl_x.bind(this);
-				if (params.param === 'y')
-					this.slot[i].process_func = this.process_scl_y.bind(this);
-				if (params.param === 'xy')
-					this.slot[i].process_func = this.process_scl_xy.bind(this);
-				
-				return;
-			}
-
-		}
-
-		console.log("Нет свободных слотов для анимации");
-
-	},
-	process: function() {
-		for (var i = 0; i < this.slot.length; i++)
-			if (this.slot[i] !== null)
-				this.slot[i].process_func(i);
-	},
-
-	process_scl_x: function(i) {
-
-		this.slot[i].obj.scale.x = this.slot[i].start_val + this.slot[i].delta * this.slot[i].func(this.slot[i].progress);
-
-		if (this.slot[i].progress >= 1) {
-			this.slot[i].callback();
-			this.slot[i].obj.visible = this.slot[i].vis_on_end;
-			this.slot[i].obj.ready = true;
-			this.slot[i] = null;
-			return;
-		}
-
-		this.slot[i].progress += this.slot[i].speed;
-	},
-
-	process_scl_y: function(i) {
-
-		this.slot[i].obj.scale.y = this.slot[i].start_val + this.slot[i].delta * this.slot[i].func(this.slot[i].progress);
-
-		if (this.slot[i].progress >= 1) {
-			this.slot[i].callback();
-			this.slot[i].obj.visible = this.slot[i].vis_on_end;
-			this.slot[i].obj.ready = true;
-			this.slot[i] = null;
-			return;
-		}
-
-		this.slot[i].progress += this.slot[i].speed;
-	},
-
-	process_scl_xy: function(i) {
-
-		let new_scl = this.slot[i].start_val + this.slot[i].delta * this.slot[i].func(this.slot[i].progress);
-		this.slot[i].obj.scale.x = this.slot[i].obj.scale.y = new_scl;
-
-		if (this.slot[i].progress >= 1) {
-			this.slot[i].callback();
-			this.slot[i].obj.visible = this.slot[i].vis_on_end;
-			this.slot[i].obj.ready = true;
-			this.slot[i] = null;
-			return;
-		}
-
-		this.slot[i].progress += this.slot[i].speed;
-	}
-	
-	
-	
-	
-	
-
-}
-
-var anim2= {
 		
 	slot: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
 	
@@ -197,6 +37,10 @@ var anim2= {
 	
 	easeOutBack: function(x) {
 		return 1 + this.c3 * Math.pow(x - 1, 3) + this.c1 * Math.pow(x - 1, 2);
+	},
+	
+	easeOutCubic: function(x) {
+		return 1 - Math.pow(1 - x, 3);
 	},
 	
 	easeInBack: function(x) {
@@ -234,12 +78,11 @@ var anim2= {
 					obj[key]=params[key][0];		
 				}
 
-
 				this.slot[i] = {
 					obj: obj,
 					params: params,
 					vis_on_end: vis_on_end,
-					func: this[func].bind(anim),
+					func: this[func].bind(anim2),
 					speed: 1.0 / Math.round( 1 / speed),
 					progress: 0
 				};
@@ -264,14 +107,6 @@ var anim2= {
 		
 		
 
-	},
-	
-	process_func : function () {
-		
-		for (let key in params)
-			params[key][2]=params[key][1]-params[key][0];
-		
-		
 	},	
 	
 	process: function () {
@@ -293,6 +128,7 @@ var anim2= {
 						s.obj[key]=s.params[key][1];
 					
 					s.obj.visible=s.vis_on_end;
+					s.obj.alpha = 1;
 					s.obj.ready=true;					
 					s.p_resolve('finished');
 					this.slot[i] = null;
@@ -306,7 +142,7 @@ var anim2= {
 
 class song_opt_class extends PIXI.Container {
 	
-	constructor(id, w, h) {
+	constructor(id, w, h, bcg_col) {
 		
 		super();
 		this.id = id;
@@ -319,12 +155,21 @@ class song_opt_class extends PIXI.Container {
 		this.bcg.pointerout=function(){this.tint=0xffffff};		
 		var cid = this.id;
 		this.bcg.pointerdown = function(){game.opt_down(cid)};
-		this.t=new PIXI.BitmapText('-', {fontName: 'Century Gothic', fontSize: 25});		
-		this.t.anchor.set(0.5,0.5);
-		this.t.maxWidth = w-30;
-		this.t.x = w/2;
-		this.t.y = h/2;
-		this.addChild(this.bcg,this.t);	
+		
+		
+		this.artist=new PIXI.BitmapText('-', {fontName: 'Century Gothic', fontSize: 25});		
+		this.artist.anchor.set(0.5,0.5);
+		this.artist.x = w/2;
+		this.artist.y = 30;
+		this.artist.tint =0x000000;
+		
+		this.song=new PIXI.BitmapText('-', {fontName: 'Century Gothic', fontSize: 20});		
+		this.song.anchor.set(0.5,0.5);
+		this.song.x = w/2;
+		this.song.y = 60;
+		this.song.tint =0x000000;
+		
+		this.addChild(this.bcg,this.artist,this.song);	
 	}	
 	
 }
@@ -872,7 +717,7 @@ function init_game_env() {
 
 	//создаем аудиоконтекст
 	audio_context = new (window.AudioContext || window.webkitAudioContext)();	
-	instruments.load_from_file('acoustic_guitar_steel');
+	instruments.load_from_file('acoustic_grand_piano');
 	
 	
     app = new PIXI.Application({width: M_WIDTH, height: M_HEIGHT, antialias: false, forceCanvas: false, backgroundAlpha:0.5});
@@ -1016,7 +861,7 @@ var calibration = {
 		
 			//это источник звука
 			var source = audio_context.createBufferSource();
-			source.buffer = instruments.buffers['acoustic_guitar_steel'][noteToKey[note]];			
+			source.buffer = instruments.buffers['acoustic_grand_piano'][noteToKey[note]];			
 			source.connect(audio_context.destination);			
 	
 			source.gainNode = audio_context.createGain();
@@ -1065,8 +910,9 @@ var calibration = {
 		
 		
 		calibration.value = sum / 8;
-		objects.my_console.text += dif;
+		objects.my_console.text += calibration.value;
 		objects.my_console.text += ' -- AVR\n';	
+		
 		calibration.finished = 1;
 	}	
 	
@@ -1153,7 +999,6 @@ function main_loop() {
     g_process();
 	
 	//обработка анимаций
-    anim.process();
 	anim2.process();
 	
 	
@@ -1182,8 +1027,8 @@ var instruments = {
 		await instruments.loadScript(file_name);
 		instruments.buffers[instrument] ={};
 		
-		for (let key in g_instrument.acoustic_guitar_steel) {
-			var base64 = g_instrument.acoustic_guitar_steel[key].split(',')[1];
+		for (let key in g_instrument.acoustic_grand_piano) {
+			var base64 = g_instrument.acoustic_grand_piano[key].split(',')[1];
 			var buffer = game.decodeArrayBuffer(base64);			
 			instruments.buffers[instrument][key] = await audio_context.decodeAudioData(buffer)
 		}		
@@ -1216,7 +1061,7 @@ var game = {
 				
 		//это источник звука
 		var source = audio_context.createBufferSource();
-		source.buffer = instruments.buffers['acoustic_guitar_steel'][note_id];			
+		source.buffer = instruments.buffers['acoustic_grand_piano'][note_id];			
 		source.connect(audio_context.destination);			
 			
 		
@@ -1297,8 +1142,8 @@ var game = {
 	
 	prepare_audio_buffers : async () => {
 				
-		for (let key in acoustic_guitar_steel) {
-			var base64 = acoustic_guitar_steel[key].split(',')[1];
+		for (let key in acoustic_grand_piano) {
+			var base64 = acoustic_grand_piano[key].split(',')[1];
 			var buffer = game.decodeArrayBuffer(base64);
 			game.instrument_buffer[key] = await audio_context.decodeAudioData(buffer)
 		}		
@@ -1359,7 +1204,7 @@ var game = {
 	
 	activate : async () => {
 		
-		
+		objects.my_console.visible = false;
 		
 		//objects.ready_note.text = "Внимание!"
 		//await anim2.add(objects.ready_note,{alpha:[0, 1]}, true, 0.01,'linear');	
@@ -1368,6 +1213,7 @@ var game = {
 		await anim2.add(objects.ready_note,{alpha:[0, 1]}, true, 0.01,'linear');	
 		await anim2.add(objects.ready_note,{alpha:[1, 0]}, false, 0.01,'linear');	
 		
+		anim2.add(objects.hit_line,{alpha:[0,1]}, true, 0.01,'linear');	
 	
 		//получаем набор вариантов
 		game.songs_opt = game.get_opt();
@@ -1379,12 +1225,14 @@ var game = {
 		
 		for (let i = 0 ; i < 3 ; i++) {			
 			let obj = objects['opt_'+i];
-			obj.t.text = midi_songs[game.songs_opt[i]][0] + "-" +  midi_songs[game.songs_opt[i]][1];
+			obj.artist.text = midi_songs[game.songs_opt[i]][0];
+			obj.song.text = midi_songs[game.songs_opt[i]][1];
 			await anim2.add(obj,{x:[-200, obj.sx]}, true, 0.05,'easeOutBack');			
 		}
 		for (let i = 3 ; i < 6 ; i++) {			
 			let obj = objects['opt_'+i];
-			obj.t.text = midi_songs[game.songs_opt[i]][0] + "-" +  midi_songs[game.songs_opt[i]][1];
+			obj.artist.text = midi_songs[game.songs_opt[i]][0];
+			obj.song.text = midi_songs[game.songs_opt[i]][1];
 			await anim2.add(obj,{x:[450, obj.sx]}, true, 0.05,'easeOutBack');			
 		}
 		
@@ -1415,7 +1263,7 @@ var game = {
 				
 		
 		//создаем расписание нот для проигрывания
-		notes.forEach(note => {					
+		notes.forEach(note => {
 			game.add_note(noteToKey[note.midi], note.time, note.duration);
 		})	
 
@@ -1439,6 +1287,7 @@ var game = {
 			unique_notes[note_num]=note_num;
 			note_num > max_note && (max_note = note_num);
 			note_num < min_note && (min_note = note_num);
+			
 		}
 		
 		//делаем ноты по порядку (по возрастанию)		
@@ -1463,9 +1312,10 @@ var game = {
 			objects.faling_notes[iter].x = 3 + unique_notes[note_num] * note_width;
 			objects.faling_notes[iter].sy = objects.faling_notes[iter].y = 350 - 2000 * notes[i].time / game.song_length;
 			objects.faling_notes[iter].visible = true;
+			objects.faling_notes[iter].alpha=0.7
 			
-			let col =  rnd2(0.4,0.6);
-			objects.faling_notes[iter].tint = PIXI.utils.rgb2hex([col, 0, 0]);
+			//let col =  rnd2(0.8,1);
+			objects.faling_notes[iter].tint = PIXI.utils.rgb2hex([rnd2(0.8,1), rnd2(0.8,1), rnd2(0.8,1)]);
 			objects.faling_notes[iter].played = 0;
 			iter ++;
 		}
@@ -1481,8 +1331,7 @@ var game = {
 				objects.sparkles[i].x = x;
 				
 					
-				//anim.add_scl({obj : objects.sparkles[i], param :'xy', val :[1,5], vis_on_end : false, func : 'linear', speed : 0.05});
-				anim2.add(objects.sparkles[i],{alpha:[1, 0]}, false, 1 / duration / 55,'linear');
+				anim2.add(objects.sparkles[i],{alpha:[1, 0],scale_xy:[0, 4]}, false, 0.025,'linear');
 				return;
 			}			
 		}
@@ -1510,9 +1359,10 @@ var game = {
 					game.add_sparkle(objects.faling_notes[i].x + objects.faling_notes[i].width * 0.5, objects.faling_notes[i].duration );					
 				}
 				
-				if (objects.faling_notes[i].visible === true)
-					if (objects.faling_notes[i].y -objects.faling_notes[i].height  > 350)
-						objects.faling_notes[i].visible = false;
+				if (objects.faling_notes[i].visible === true && objects.faling_notes[i].ready !== false)
+					if (objects.faling_notes[i].y - objects.faling_notes[i].height  > 350)
+						anim2.add(objects.faling_notes[i],{alpha:[0.7, 0]}, false, 0.02,'linear');	
+
 				
 
 			}			
@@ -1533,14 +1383,18 @@ var game = {
 		
 		await big_message.show(result,')))');
 		
+		anim2.add(objects.hit_line,{alpha:[1,0]}, false, 0.01,'linear');	
+		
 		for (let i = 0 ; i < 3 ; i++) {			
 			let obj = objects['opt_'+i];
-			obj.t.text = midi_songs[game.songs_opt[i]][0] + "-" +  midi_songs[game.songs_opt[i]][1];
+			obj.artist.text = '';
+			obj.song.text = '';
 			await anim2.add(obj,{x:[ obj.sx,-200]}, false, 0.05,'easeOutBack');			
 		}
 		for (let i = 3 ; i < 6 ; i++) {			
 			let obj = objects['opt_'+i];
-			obj.t.text = midi_songs[game.songs_opt[i]][0] + "-" +  midi_songs[game.songs_opt[i]][1];
+			obj.artist.text = '';
+			obj.song.text = '';
 			await anim2.add(obj,{x:[obj.sx,450]}, false, 0.05,'easeInBack');			
 		}
 		
@@ -1562,7 +1416,9 @@ var cat_menu = {
 	
 	activate : () => {
 		
+	
 		anim2.add(objects.cat_menu_cont,{x:[450,objects.cat_menu_cont.sx]}, true, 0.05,'linear');	
+		anim2.add(objects.header1,{y:[-400,objects.header1.sy]}, true, 0.025,'easeOutBack');	
 		
 		//калибруем миди
 		calibration.start();
@@ -1580,22 +1436,20 @@ var cat_menu = {
 	
 	close : () => {
 		
-		anim2.add(objects.cat_menu_cont,{
-			x:[objects.cat_menu_cont.x,-450],
-			}, false, 0.05,'linear');	
+		anim2.add(objects.cat_menu_cont,{x:[objects.cat_menu_cont.x,-450]}, false, 0.05,'linear');	
+		anim2.add(objects.header1,{y:[,objects.header1.sy,-400]}, false, 0.025,'easeOutBack');	
 	}
 	
 	
 }
 
 var main_menu = {
-	
-	
+		
 	activate : () => {
 		
 		anim2.add(objects.main_buttons_cont,{y:[800,objects.main_buttons_cont.sy]}, true, 0.025,'easeOutBack');	
-		anim2.add(objects.guitar,{x:[-450,objects.guitar.sx]}, true, 0.025,'easeOutBack');	
 		anim2.add(objects.header0,{y:[-400,objects.header0.sy]}, true, 0.025,'easeOutBack');	
+		anim2.add(objects.bcg1,{y:[800,objects.bcg1.sy]}, true, 0.005,'easeOutCubic');	
 	},
 	
 	next_down : () => {
@@ -1608,11 +1462,8 @@ var main_menu = {
 	close : () => {
 		
 		anim2.add(objects.main_buttons_cont,{y:[objects.main_buttons_cont.sy,800]}, false, 0.025,'easeInBack');	
-		anim2.add(objects.guitar,{x:[objects.guitar.sx,-450]}, false, 0.025,'easeInBack');	
 		anim2.add(objects.header0,{y:[objects.header0.sy,-400]}, false, 0.025,'easeInBack');
 	}
-	
-	
 	
 }
 
