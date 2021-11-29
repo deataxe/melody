@@ -717,7 +717,9 @@ function init_game_env() {
 
 	//создаем аудиоконтекст
 	audio_context = new (window.AudioContext || window.webkitAudioContext)();	
-	instruments.load_from_file('acoustic_grand_piano');
+	eval(gres.piano.data);
+	instruments.prepare_buffer('acoustic_grand_piano');
+	
 	
 	
     app = new PIXI.Application({width: M_WIDTH, height: M_HEIGHT, antialias: false, forceCanvas: false, backgroundAlpha:0.5});
@@ -852,6 +854,7 @@ function init_game_env() {
 
 var calibration = {
 	
+	p_resolve : 0,
 	finished : 0,
 	value: 0,
 	
@@ -886,10 +889,8 @@ var calibration = {
 			return;
 		
 		
-		objects.my_console.text += 'wait 3 sec\n';
-		await new Promise(resolve => setTimeout(resolve, 3000));	
-		
-		objects.my_console.text += 'start calibration\n';
+		await anim2.add(objects.c_cont,{alpha:[0,1]}, true, 0.05,'linear');	
+		await new Promise(resolve => setTimeout(resolve, 2000));	
 
 		let s_time =0;
 		let dif = 0;
@@ -897,23 +898,26 @@ var calibration = {
 		
 		let start_time = 0;
 		let duration_time =0.001;
-		
-		for (let i=0;i<8;i++) {
+		let calibration_length = 15;
+		for (let i=0;i<calibration_length;i++) {
 			
 			s_time = audio_context.currentTime;
 			await calibration.play_note(50+i,start_time,duration_time);
 			dif = (audio_context.currentTime - s_time)-start_time-duration_time;
+			objects.c_bar.width = objects.c_bar.base_width * i / (calibration_length - 1);
 			sum += dif;
-			objects.my_console.text += dif;
-			objects.my_console.text += '\n';			
+			await new Promise(resolve => setTimeout(resolve, 100));	
 		}
 		
 		
-		calibration.value = sum / 8;
-		objects.my_console.text += calibration.value;
-		objects.my_console.text += ' -- AVR\n';	
+		calibration.value = sum / (calibration_length - 1);
+		objects.c_text.text = Math.round(calibration.value*10000)/10000;
+		await new Promise(resolve => setTimeout(resolve, 1000));	
+		objects.c_cont.visible = false;
 		
 		calibration.finished = 1;
+		
+		await anim2.add(objects.c_cont,{alpha:[1,0]}, false, 0.05,'linear');	
 	}	
 	
 }
@@ -944,7 +948,8 @@ function load_resources() {
 	//let git_src="https://akukamil.github.io/melody/"
 	let git_src=""
 	
-
+	game_res.add('piano',git_src+'soundfont/acoustic_grand_piano-ogg.js');
+	
 	
 	game_res.add("m2_font", git_src+"m_font.fnt");
 
@@ -1033,7 +1038,17 @@ var instruments = {
 			instruments.buffers[instrument][key] = await audio_context.decodeAudioData(buffer)
 		}		
 		
-		objects.my_console.text += 'Инструмент загружен\n';	
+	},
+	
+	prepare_buffer : async (instrument) => {
+		
+		instruments.buffers[instrument] ={};
+		
+		for (let key in g_instrument[instrument]) {
+			var base64 = g_instrument[instrument][key].split(',')[1];
+			var buffer = game.decodeArrayBuffer(base64);			
+			instruments.buffers[instrument][key] = await audio_context.decodeAudioData(buffer)
+		}			
 	}
 	
 }
@@ -1204,7 +1219,6 @@ var game = {
 	
 	activate : async () => {
 		
-		objects.my_console.visible = false;
 		
 		//objects.ready_note.text = "Внимание!"
 		//await anim2.add(objects.ready_note,{alpha:[0, 1]}, true, 0.01,'linear');	
@@ -1387,14 +1401,10 @@ var game = {
 		
 		for (let i = 0 ; i < 3 ; i++) {			
 			let obj = objects['opt_'+i];
-			obj.artist.text = '';
-			obj.song.text = '';
 			await anim2.add(obj,{x:[ obj.sx,-200]}, false, 0.05,'easeOutBack');			
 		}
 		for (let i = 3 ; i < 6 ; i++) {			
 			let obj = objects['opt_'+i];
-			obj.artist.text = '';
-			obj.song.text = '';
 			await anim2.add(obj,{x:[obj.sx,450]}, false, 0.05,'easeInBack');			
 		}
 		
@@ -1417,7 +1427,7 @@ var cat_menu = {
 	activate : () => {
 		
 	
-		anim2.add(objects.cat_menu_cont,{x:[450,objects.cat_menu_cont.sx]}, true, 0.05,'linear');	
+		anim2.add(objects.cat_menu_cont,{y:[800,objects.cat_menu_cont.sy]}, true, 0.025,'easeOutBack');	
 		anim2.add(objects.header1,{y:[-400,objects.header1.sy]}, true, 0.025,'easeOutBack');	
 		
 		//калибруем миди
@@ -1436,8 +1446,8 @@ var cat_menu = {
 	
 	close : () => {
 		
-		anim2.add(objects.cat_menu_cont,{x:[objects.cat_menu_cont.x,-450]}, false, 0.05,'linear');	
-		anim2.add(objects.header1,{y:[,objects.header1.sy,-400]}, false, 0.025,'easeOutBack');	
+		anim2.add(objects.cat_menu_cont,{y:[objects.cat_menu_cont.y,800]}, false, 0.025,'easeInBack');	
+		anim2.add(objects.header1,{y:[objects.header1.y,-400]}, false, 0.025,'easeInBack');	
 	}
 	
 	
@@ -1452,9 +1462,16 @@ var main_menu = {
 		anim2.add(objects.bcg1,{y:[800,objects.bcg1.sy]}, true, 0.005,'easeOutCubic');	
 	},
 	
-	next_down : () => {
+	next_down : async () => {
 
 		main_menu.close();		
+		await new Promise(resolve => setTimeout(resolve, 1000));	
+		
+		//если калибровка не пройдена то проходим ее
+		if (calibration.finished === 0)
+			await calibration.start();		
+		
+		//запускаем меню выбора категории
 		cat_menu.activate();
 		
 	},
