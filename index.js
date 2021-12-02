@@ -237,33 +237,99 @@ var make_text = function (obj, text, max_width) {
 	obj.text =  text;	
 }
 
-var big_message = {
+var results_message = {
 	
 	p_resolve : 0,
+	ready : 0,
 		
-	show: function(t1,t2) {
+	show: async function() {
 				
-		if (t2!==undefined || t2!=="")
-			objects.big_message_text2.text=t2;
+		//еще полносью не загрузился далог		
+		results_message.ready = 0;
+		
+		//это основной бонус который показываем правильно или нет ответили
+		let simple_bonus = game.correct_answers_row > 0 ?  1 : 0;
+		
+		if (simple_bonus === 1) {
+			objects.bonus_header.texture = gres.bonus_header.texture;			
+		}
 		else
-			objects.big_message_text2.text='**********';
+		{
+			objects.bonus_header.texture = gres.error_header.texture;			
+			simple_bonus = -10;
+		}
 
-		objects.big_message_text.text=t1;
-			
-		anim2.add(objects.big_message_cont,{y:[-180, objects.big_message_cont.sy]}, true, 0.02,'easeOutBack');
+		
+		await anim2.add(objects.results_message_cont,{y:[-180, objects.results_message_cont.sy]}, true, 0.02,'easeOutBack');
+		
+		
+
+		
+		if (simple_bonus === 1) {
+			objects.bonus_line0.text='Бонус: +1';
+			await anim2.add(objects.bonus_line0,{alpha:[0, 1]}, true, 0.02,'linear');			
+		}
+		
+		
+		let speed_bonus = (game.notes_played<10 && simple_bonus === 1)? 9 - game.notes_played : 0;
+		
+		if (speed_bonus > 0) {
+			objects.bonus_line1.text='Бонус за скорость: +' + speed_bonus;	
+			await anim2.add(objects.bonus_line1,{alpha:[0, 1]}, true, 0.02,'linear');			
+		}
+		
+		
+		let combo_bonus = game.correct_answers_row > 1 ? game.correct_answers_row*2 : 0;
+		if (combo_bonus > 0) {
+			objects.bonus_line2.text='Угадал ' + game.correct_answers_row + ' подряд: +' + combo_bonus;
+			await anim2.add(objects.bonus_line2,{alpha:[0, 1]}, true, 0.02,'linear');
+		}
+
+		
+		let total_bonus = simple_bonus + speed_bonus + combo_bonus;
+		if (total_bonus>=0)
+			objects.bonus_total.text='Итого: +' + total_bonus;
+		else
+			objects.bonus_total.text='Итого: ' + total_bonus;
+		
+		await anim2.add(objects.bonus_total,{alpha:[0, 1]}, true, 0.02,'linear');
+		results_message.ready = 1;
 				
 		return new Promise(function(resolve, reject){					
-			big_message.p_resolve = resolve;	  		  
+			results_message.p_resolve = resolve;	  		  
 		});
 	},
-
-	close : function() {
+	
+	exit_down : async () => {
+		if (results_message.ready === 0 )
+			return;
 		
-		if (objects.big_message_cont.ready===false)
+		await results_message.close();
+		await game.close();
+		main_menu.activate();
+	},
+	
+	next_down : () => {
+		
+		if (results_message.ready === 0 )
+			return;
+		
+		results_message.close();
+		game.restart();		
+		
+	},
+
+	close : async function() {
+		
+		if (objects.results_message_cont.ready===false)
 			return;
 
 		game_res.resources.close.sound.play();
-		anim2.add(objects.big_message_cont,{y:[objects.big_message_cont.sy,450]}, false, 0.02,'easeInBack');
+		await anim2.add(objects.results_message_cont,{y:[objects.results_message_cont.sy,800]}, false, 0.02,'easeInBack');
+		objects.bonus_line0.text='';
+		objects.bonus_line1.text='';
+		objects.bonus_line2.text='';
+		objects.bonus_total.text='';
 		this.p_resolve("close");			
 	}
 
@@ -1062,6 +1128,8 @@ var game = {
 	faling_notes_shift : 0,
 	song_length : 0,
 	avr_dif : 0,
+	correct_answers_row : 0,
+	notes_played : 0,
 	start_time : 0,
 	songs_opt : [],
 	player : {},
@@ -1202,61 +1270,61 @@ var game = {
 		game.audio_buffers.forEach(b=>{
 			b.stop();
 		});
+		
 		game.audio_buffers = [];
 		
 		if (game.song_id === id) {
+			game.correct_answers_row++;
 			game_res.resources.applause.sound.play();
-			game.close("Правильно");			
+			game.stop();	
 		}
 
 		else {
+			game.correct_answers_row = 0;
 			game_res.resources.lose.sound.play();
-			game.close("Неправильно");				
+			game.stop();	
 		}
 
 		
 	},
 	
+	stop : () => {
+		
+		state = "";
+		g_process = function() {};
+		results_message.show();		
+	},
+	
 	activate : async () => {
-		
-		
-		//objects.ready_note.text = "Внимание!"
-		//await anim2.add(objects.ready_note,{alpha:[0, 1]}, true, 0.01,'linear');	
-		//await anim2.add(objects.ready_note,{alpha:[1, 0]}, false, 0.01,'linear');	
+				
+
 		objects.ready_note.text = "Слушаем..."
 		await anim2.add(objects.ready_note,{alpha:[0, 1]}, true, 0.01,'linear');	
-		await anim2.add(objects.ready_note,{alpha:[1, 0]}, false, 0.01,'linear');	
+		await anim2.add(objects.ready_note,{alpha:[1, 0]}, false, 0.01,'linear');			
+		await anim2.add(objects.hit_line,{alpha:[0,1]}, true, 0.01,'linear');	
 		
-		anim2.add(objects.hit_line,{alpha:[0,1]}, true, 0.01,'linear');	
-	
+		
 		//получаем набор вариантов
 		game.songs_opt = game.get_opt();
 		
 		//выбираем случайную песню
 		game.song_id = irnd(0, 6);
+		
+		//это сколько нот проиграно для бонуса
+		game.notes_played = 0;
 				
 		//показываеми варианты ответов
-		
-		for (let i = 0 ; i < 3 ; i++) {			
+		for (let i = 0 ; i < 6 ; i++) {			
 			let obj = objects['opt_'+i];
 			obj.artist.text = midi_songs[game.songs_opt[i]][0];
 			obj.song.text = midi_songs[game.songs_opt[i]][1];
-			await anim2.add(obj,{x:[-200, obj.sx]}, true, 0.05,'easeOutBack');			
+			await anim2.add(obj,{alpha:[0, 1]}, true, 0.05,'linear');			
 		}
-		for (let i = 3 ; i < 6 ; i++) {			
-			let obj = objects['opt_'+i];
-			obj.artist.text = midi_songs[game.songs_opt[i]][0];
-			obj.song.text = midi_songs[game.songs_opt[i]][1];
-			await anim2.add(obj,{x:[450, obj.sx]}, true, 0.05,'easeOutBack');			
-		}
-		
-		
 
+		
 		g_process = function() {game.process()};
 		game.last_play_event = game_tick;
 		game.play_midi();
-
-		
 	},
 	
 	play_midi : async () => {
@@ -1334,6 +1402,8 @@ var game = {
 			iter ++;
 		}
 		
+		await anim2.add(objects.faling_notes_cont,{alpha:[0,1]}, true, 0.01,'linear');	
+		
 	},
 	
 	add_sparkle : (x, duration) => {
@@ -1370,15 +1440,15 @@ var game = {
 				if (objects.faling_notes[i].y > 350 && objects.faling_notes[i].played === 0) {
 					
 					objects.faling_notes[i].played = 1;
-					game.add_sparkle(objects.faling_notes[i].x + objects.faling_notes[i].width * 0.5, objects.faling_notes[i].duration );					
+					game.add_sparkle(objects.faling_notes[i].x + objects.faling_notes[i].width * 0.5, objects.faling_notes[i].duration );		
+					game.notes_played++;
 				}
 				
 				if (objects.faling_notes[i].visible === true && objects.faling_notes[i].ready !== false)
 					if (objects.faling_notes[i].y - objects.faling_notes[i].height  > 350)
 						anim2.add(objects.faling_notes[i],{alpha:[0.7, 0]}, false, 0.02,'linear');	
-
-				
-
+					
+					
 			}			
 			
 			if (dif > game.song_length + 3000) {
@@ -1395,27 +1465,47 @@ var game = {
 		state = "";
 		g_process = function() {};
 		
-		await big_message.show(result,')))');
-		
-		anim2.add(objects.hit_line,{alpha:[1,0]}, false, 0.01,'linear');	
-		
-		for (let i = 0 ; i < 3 ; i++) {			
-			let obj = objects['opt_'+i];
-			await anim2.add(obj,{x:[ obj.sx,-200]}, false, 0.05,'easeOutBack');			
-		}
-		for (let i = 3 ; i < 6 ; i++) {			
-			let obj = objects['opt_'+i];
-			await anim2.add(obj,{x:[obj.sx,450]}, false, 0.05,'easeInBack');			
-		}
 		
 		
-		objects.faling_notes.forEach(i=>{
-			i.visible = false;
+		//убираем линию
+		await anim2.add(objects.hit_line,{alpha:[1,0]}, false, 0.02,'linear');	
+		await anim2.add(objects.faling_notes_cont,{alpha:[1,0]}, false, 0.02,'linear');	
+		
+		
+		//скрываем все падающие ноты
+		objects.faling_notes.forEach(n => {			
+			n.visible = false;
 		})
 		
-
+		//убираем варианты ответов
+		for (let i = 0 ; i < 6 ; i++) {			
+			let obj = objects['opt_'+i];
+			await anim2.add(obj,{alpha:[1, 0]}, false, 0.05,'linear');			
+		}
 		
-		main_menu.activate();
+		
+	},
+	
+	restart : async () => {
+		
+		//убираем линию
+		await anim2.add(objects.hit_line,{alpha:[1,0]}, false, 0.02,'linear');	
+		await anim2.add(objects.faling_notes_cont,{alpha:[1,0]}, false, 0.02,'linear');	
+		
+		
+		//скрываем все падающие ноты
+		objects.faling_notes.forEach(n => {			
+			n.visible = false;
+		})
+		
+		//убираем варианты ответов
+		for (let i = 0 ; i < 6 ; i++) {			
+			let obj = objects['opt_'+i];
+			await anim2.add(obj,{alpha:[1, 0]}, false, 0.05,'linear');			
+		}
+		
+		//заново запускаем игру
+		game.activate();
 		
 	}
 			
