@@ -51,6 +51,10 @@ var anim2= {
 		return x * x;
 	},
 	
+	ease2back : function(x) {
+		return Math.sin(x*Math.PI);
+	},
+	
 	easeInOutCubic: function(x) {
 		return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
 	},
@@ -62,6 +66,9 @@ var anim2= {
 			if (this.slot[i]!==null)
 				if (this.slot[i].obj===params.obj)
 					this.slot[i]=null;
+				
+				
+				
 		
 		let f=0;
 		//ищем свободный слот для анимации
@@ -75,8 +82,15 @@ var anim2= {
 				//добавляем дельту к параметрам и устанавливаем начальное положение
 				for (let key in params) {
 					params[key][2]=params[key][1]-params[key][0];					
-					obj[key]=params[key][0];		
+					obj[key]=params[key][0];
 				}
+				
+				//для возвратных функцие конечное значение равно начальному
+				if (func === 'ease2back')
+					for (let key in params)
+						params[key][1]=params[key][0];					
+
+					
 
 				this.slot[i] = {
 					obj: obj,
@@ -246,6 +260,9 @@ var results_message = {
 				
 		//еще полносью не загрузился далог		
 		results_message.ready = 0;
+		
+		
+		anim2.add(objects.bcg0,{scale_xy:[1, 1.2]}, true, 0.002,'ease2back');
 		
 		//это основной бонус который показываем правильно или нет ответили
 		let simple_bonus = game.correct_answers_row > 0 ?  1 : 0;
