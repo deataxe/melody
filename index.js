@@ -175,13 +175,13 @@ class song_opt_class extends PIXI.Container {
 		this.artist.anchor.set(0.5,0.5);
 		this.artist.x = w/2;
 		this.artist.y = 30;
-		this.artist.tint =0x000000;
+		this.artist.tint =0xffffff;
 		
 		this.song=new PIXI.BitmapText('-', {fontName: 'Century Gothic', fontSize: 20});		
 		this.song.anchor.set(0.5,0.5);
 		this.song.x = w/2;
 		this.song.y = 60;
-		this.song.tint =0x000000;
+		this.song.tint =0xffffff;
 		
 		this.addChild(this.bcg,this.artist,this.song);	
 	}	
@@ -262,8 +262,6 @@ var results_message = {
 		results_message.ready = 0;
 		
 		
-		anim2.add(objects.bcg0,{scale_xy:[1, 1.2]}, true, 0.002,'ease2back');
-		
 		//это основной бонус который показываем правильно или нет ответили
 		let simple_bonus = game.correct_answers_row > 0 ?  1 : 0;
 		
@@ -277,11 +275,8 @@ var results_message = {
 		}
 
 		
-		await anim2.add(objects.results_message_cont,{y:[-180, objects.results_message_cont.sy]}, true, 0.02,'easeOutBack');
-		
-		
-
-		
+		await anim2.add(objects.results_message_cont,{y:[-500, objects.results_message_cont.sy]}, true, 0.02,'easeOutBack');
+				
 		if (simple_bonus === 1) {
 			objects.bonus_line0.text='Бонус: +1';
 			await anim2.add(objects.bonus_line0,{alpha:[0, 1]}, true, 0.02,'linear');			
@@ -311,6 +306,13 @@ var results_message = {
 		
 		await anim2.add(objects.bonus_total,{alpha:[0, 1]}, true, 0.02,'linear');
 		results_message.ready = 1;
+		
+		
+		
+		anim2.add(objects.results_exit,{scale_x:[0, 1]}, true, 0.02,'easeOutBack');
+		anim2.add(objects.results_next,{scale_x:[0, 1]}, true, 0.02,'easeOutBack');
+		
+
 				
 		return new Promise(function(resolve, reject){					
 			results_message.p_resolve = resolve;	  		  
@@ -347,6 +349,9 @@ var results_message = {
 		objects.bonus_line1.text='';
 		objects.bonus_line2.text='';
 		objects.bonus_total.text='';
+		objects.results_exit.visible=false;
+		objects.results_next.visible=false;
+		
 		this.p_resolve("close");			
 	}
 
@@ -1042,6 +1047,7 @@ function load_resources() {
 	game_res.add('lose',git_src+'sounds/lose.mp3');
 	game_res.add('locked',git_src+'sounds/locked.mp3');
 	game_res.add('applause',git_src+'sounds/applause.mp3');
+	game_res.add('main',git_src+'sounds/main.mp3');
 	
     //добавляем из листа загрузки
     for (var i = 0; i < load_list.length; i++) {
@@ -1089,6 +1095,7 @@ function main_loop() {
 	//обработка анимаций
 	anim2.process();
 	
+
 	
     requestAnimationFrame(main_loop);
     game_tick += 0.01666666;
@@ -1279,10 +1286,13 @@ var game = {
 		
 	},
 	
-	opt_down(id) {
+	opt_down: async (id) => {
 		
 		if (state!=="playing")
 			return;
+		
+		
+
 		
 		game.audio_buffers.forEach(b=>{
 			b.stop();
@@ -1293,14 +1303,25 @@ var game = {
 		if (game.song_id === id) {
 			game.correct_answers_row++;
 			game_res.resources.applause.sound.play();
+			objects['opt_'+id].bcg.texture = gres.opt_correct.texture;
 			game.stop();	
 		}
-
 		else {
 			game.correct_answers_row = 0;
 			game_res.resources.lose.sound.play();
+			objects['opt_'+id].bcg.texture = gres.opt_wrong.texture;
+			objects['opt_'+game.song_id].bcg.texture = gres.opt_correct.texture;
 			game.stop();	
 		}
+		
+		//убираем падающие ноты
+		await anim2.add(objects.faling_notes_cont,{alpha:[1,0]}, false, 0.02,'linear');	
+		
+		//убираем варианты ответов
+		for (let i = 0 ; i < 6 ; i++) {			
+			let obj = objects['opt_'+i];
+			await anim2.add(obj,{alpha:[1, 0]}, false, 0.05,'linear');			
+		}		
 
 		
 	},
@@ -1314,7 +1335,9 @@ var game = {
 	
 	activate : async () => {
 				
-
+		game_res.resources.main.sound.stop();
+		
+		
 		objects.ready_note.text = "Слушаем..."
 		await anim2.add(objects.ready_note,{alpha:[0, 1]}, true, 0.01,'linear');	
 		await anim2.add(objects.ready_note,{alpha:[1, 0]}, false, 0.01,'linear');			
@@ -1335,6 +1358,7 @@ var game = {
 			let obj = objects['opt_'+i];
 			obj.artist.text = midi_songs[game.songs_opt[i]][0];
 			obj.song.text = midi_songs[game.songs_opt[i]][1];
+			obj.bcg.texture = gres.opt_bcg.texture;
 			await anim2.add(obj,{alpha:[0, 1]}, true, 0.05,'linear');			
 		}
 
@@ -1411,7 +1435,7 @@ var game = {
 			objects.faling_notes[iter].x = 3 + unique_notes[note_num] * note_width;
 			objects.faling_notes[iter].sy = objects.faling_notes[iter].y = 350 - 2000 * notes[i].time / game.song_length;
 			objects.faling_notes[iter].visible = true;
-			objects.faling_notes[iter].alpha=0.7
+			objects.faling_notes[iter].alpha=0.5
 			
 			//let col =  rnd2(0.8,1);
 			objects.faling_notes[iter].tint = PIXI.utils.rgb2hex([rnd2(0.8,1), rnd2(0.8,1), rnd2(0.8,1)]);
@@ -1486,7 +1510,7 @@ var game = {
 		
 		//убираем линию
 		await anim2.add(objects.hit_line,{alpha:[1,0]}, false, 0.02,'linear');	
-		await anim2.add(objects.faling_notes_cont,{alpha:[1,0]}, false, 0.02,'linear');	
+		
 		
 		
 		//скрываем все падающие ноты
@@ -1494,11 +1518,7 @@ var game = {
 			n.visible = false;
 		})
 		
-		//убираем варианты ответов
-		for (let i = 0 ; i < 6 ; i++) {			
-			let obj = objects['opt_'+i];
-			await anim2.add(obj,{alpha:[1, 0]}, false, 0.05,'linear');			
-		}
+
 		
 		
 	},
@@ -1507,7 +1527,6 @@ var game = {
 		
 		//убираем линию
 		await anim2.add(objects.hit_line,{alpha:[1,0]}, false, 0.02,'linear');	
-		await anim2.add(objects.faling_notes_cont,{alpha:[1,0]}, false, 0.02,'linear');	
 		
 		
 		//скрываем все падающие ноты
@@ -1515,11 +1534,6 @@ var game = {
 			n.visible = false;
 		})
 		
-		//убираем варианты ответов
-		for (let i = 0 ; i < 6 ; i++) {			
-			let obj = objects['opt_'+i];
-			await anim2.add(obj,{alpha:[1, 0]}, false, 0.05,'linear');			
-		}
 		
 		//заново запускаем игру
 		game.activate();
@@ -1566,7 +1580,10 @@ var main_menu = {
 		
 		anim2.add(objects.main_buttons_cont,{y:[800,objects.main_buttons_cont.sy]}, true, 0.025,'easeOutBack');	
 		anim2.add(objects.header0,{y:[-400,objects.header0.sy]}, true, 0.025,'easeOutBack');	
-		anim2.add(objects.bcg1,{y:[800,objects.bcg1.sy]}, true, 0.005,'easeOutCubic');	
+		
+		game_res.resources.main.sound.play();
+		
+		//anim2.add(objects.bcg1,{y:[800,objects.bcg1.sy]}, true, 0.005,'easeOutCubic');	
 	},
 	
 	next_down : async () => {
