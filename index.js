@@ -187,6 +187,7 @@ var anim3 = {
 		
 		
 		//ищем свободный слот для анимации
+		let f=0;
 		for (var i = 0; i < this.slot.length; i++) {
 
 			if (this.slot[i] === null) {
@@ -208,10 +209,21 @@ var anim3 = {
 					next_point: 1,
 					repeat: repeat
 				};
-				f = 1;
+				f = 1;				
 				break;
 			}
 		}		
+		
+		if (f===1) {			
+			return new Promise(function(resolve, reject){					
+			  anim3.slot[i].p_resolve = resolve;	  		  
+			});				
+		} else {
+			
+			return new Promise(function(resolve, reject){					
+			  resolve();	  		  
+			});	
+		}
 	},
 	
 	process: function () {
@@ -235,7 +247,10 @@ var anim3 = {
 							s.obj[s.params[i]]=s.schedule[s.next_point].val[i]
 											
 						s.next_point++;		
-												
+						
+						//начинаем опять отчет времени
+						s.start_time = game_tick;	
+						
 						if (s.next_point === s.schedule.length) {							
 
 							if (s.repeat === 1) {
@@ -256,22 +271,7 @@ var anim3 = {
 					//это вариант с твинами между контрольными точками
 					
 					if (s.obj.ready === true) {
-												
-						let p0 = s.schedule[s.cur_point];
-						let p1 = s.schedule[s.next_point];
-						let time = p1.time - p0.time;
 						
-						let cur_schedule={};	
-						
-						for (let i = 0 ; i < s.params.length ; i++) {						
-							let p = s.params[i];
-							cur_schedule[p]=[p0.val[i],p1.val[i]]						
-						}
-						
-						
-						anim2.add(s.obj,cur_schedule,true,time,s.func,1);		
-						s.cur_point++;
-						s.next_point++;
 						
 						//если больше нет контрольных точек то убираем слот или начинаем сначала
 						if (s.next_point === s.schedule.length) {
@@ -280,9 +280,28 @@ var anim3 = {
 								s.cur_point = 0;
 								s.next_point = 1;
 							}
-							else
-								this.slot[i]=null;						
-						}
+							else {
+								s.p_resolve('finished');
+								this.slot[i]=null;	
+							}					
+						} else {
+							
+							let p0 = s.schedule[s.cur_point];
+							let p1 = s.schedule[s.next_point];
+							let time = p1.time;
+							
+							let cur_schedule={};	
+							
+							for (let i = 0 ; i < s.params.length ; i++) {						
+								let p = s.params[i];
+								cur_schedule[p]=[p0.val[i],p1.val[i]]						
+							}					
+							
+							anim2.add(s.obj,cur_schedule,true,time,s.func,1);		
+							s.cur_point++;
+							s.next_point++;							
+							
+						}						
 					}		
 				}
 			}			
@@ -405,51 +424,52 @@ var results_message = {
 		objects.bonus_total.visible = false;
 		
 		//это основной бонус который показываем правильно или нет ответили
-		let simple_bonus = game.correct_answers_row > 0 ?  1 : -10;
+		let simple_bonus = game.correct_answers_row > 0 ?  1 : -game.return_penalty;
 		
 		//показываем надпись верно или нет
-		if (simple_bonus === 1)
-			objects.bonus_header.texture = gres.bonus_header.texture;			
-		else
+		if (simple_bonus === 1) {			
+			objects.bonus_header.texture = gres.bonus_header.texture;				
+		}		
+		else {			
+			game.return_penalty = 0;
 			objects.bonus_header.texture = gres.error_header.texture;			
-
-
+		}		
 		
 		await anim2.add(objects.results_message_cont,{y:[-500, objects.results_message_cont.sy]}, true, 2,'easeOutBack');
-
 		
-		let speed_bonus = (game.notes_played<10 && simple_bonus === 1)? 9 - game.notes_played : 0;
+		let speed_bonus = (game.notes_played<10 && simple_bonus === 1)? 13 - game.notes_played : 0;
 		let combo_bonus = game.correct_answers_row > 1 ? game.correct_answers_row*2 : 0;
 		combo_bonus = Math.min(combo_bonus,20);
 
 		let total_bonus = simple_bonus + speed_bonus + combo_bonus;
-		
-		
+						
 		objects.bonus_line0.text = simple_bonus;
 		objects.bonus_line1.text = speed_bonus;
 		objects.bonus_line2.text = combo_bonus;
-		objects.bonus_total.text = total_bonus;
-		
+		objects.bonus_total.text = total_bonus;		
 		
 		if (simple_bonus > 0) gres.bonus0.sound.play();		
-		await anim2.add(objects.bonus_line0,{alpha:[0, 1]}, true, 1,'linear');	
+		await anim3.add(objects.bonus_line0,['scale_xy'],[{time:0,val:[0]},{time:0.25,val:[2]},{time:0.5,val:[1]}],'easeInOutCubic');	
+
 		
 		if (speed_bonus > 0) gres.bonus1.sound.play();	
-		await anim2.add(objects.bonus_line1,{alpha:[0, 1]}, true, 1,'linear');
+		await anim3.add(objects.bonus_line1,['scale_xy'],[{time:0,val:[0]},{time:0.25,val:[2]},{time:0.5,val:[1]}],'easeInOutCubic');	
 		
 		if (combo_bonus > 0) gres.bonus2.sound.play();	
-		await anim2.add(objects.bonus_line2,{alpha:[0, 1]}, true, 1,'linear');	
+		await anim3.add(objects.bonus_line2,['scale_xy'],[{time:0,val:[0]},{time:0.25,val:[2]},{time:0.5,val:[1]}],'easeInOutCubic');	
 		
-		await anim2.add(objects.bonus_total,{alpha:[0, 1]}, true, 1,'linear');
+		await anim3.add(objects.bonus_total,['scale_xy'],[{time:0,val:[0]},{time:0.25,val:[2]},{time:0.5,val:[1]}],'easeInOutCubic');	
 		
 		results_message.ready = 1;	
 		
+		//записываем в базу новый рекорд
+		my_data.record = my_data.record + game.return_penalty + total_bonus
+		firebase.database().ref("players/"+my_data.uid+"/record").set(my_data.record);
+		objects.record_note.text = 'Баланс: '+my_data.record;
 		
 		anim2.add(objects.results_exit,{scale_x:[0, 1]}, true, 1,'easeOutBack');
 		anim2.add(objects.results_next,{scale_x:[0, 1]}, true, 1,'easeOutBack');
-		
-
-				
+						
 		return new Promise(function(resolve, reject){					
 			results_message.p_resolve = resolve;	  		  
 		});
@@ -1340,7 +1360,7 @@ var game = {
 	total_notes : 0,
 	faling_notes_shift : 0,
 	song_length : 0,
-	avr_dif : 0,
+	return_penalty : 0,	
 	correct_answers_row : 0,
 	notes_played : 0,
 	start_time : 0,
@@ -1421,16 +1441,9 @@ var game = {
 		
 		if (state!=="playing")
 			return;
-		
-		
+				
 		game_res.resources.click.sound.play();
-		
-		game.audio_buffers.forEach(b=>{
-			b.stop();
-		});
-		
-		game.audio_buffers = [];
-		
+				
 		if (game.song_id === id) {
 			game.correct_answers_row++;
 			game_res.resources.applause.sound.play();
@@ -1440,29 +1453,33 @@ var game = {
 			game.correct_answers_row = 0;
 			game_res.resources.lose.sound.play();
 			objects['opt_'+id].bcg.texture = gres.opt_wrong.texture;
-			objects['opt_'+game.song_id].bcg.texture = gres.opt_correct.texture;
-				
+			objects['opt_'+game.song_id].bcg.texture = gres.opt_correct.texture;				
 		}
-		
-		
-		//убираем картинку
-		anim2.add(objects.random_image,{alpha:[0.5, 0]}, false, 1,'linear');	
-		
-		//убираем падающие ноты
-		await anim2.add(objects.faling_notes_cont,{alpha:[1,0]}, false, 1,'linear');	
-		
-		//убираем контейнер ответов
-		await anim2.add(objects.opt_cont,{y:[objects.opt_cont.y,500]}, true, 1,'easeInBack');	
-		
-		game.stop();
 
-		
+		//останавливаем игру
+		game.stop();	
 	},
 	
-	stop : () => {
+	stop : async () => {
 		
 		state = "";
 		g_process = function() {};
+		
+		//останавливаем и удаляем звуки
+		game.audio_buffers.forEach(b=>{
+			b.stop();
+		});		
+		game.audio_buffers = [];
+		
+		//убираем картинку
+		anim2.add(objects.random_image,{alpha:[0.5, 0]}, false, 1,'linear');		
+
+		//убираем падающие ноты
+		await anim2.add(objects.faling_notes_cont,{alpha:[1,0]}, false, 1,'linear');			
+		
+		//убираем контейнер ответов
+		await anim2.add(objects.opt_cont,{y:[objects.opt_cont.y,500]}, true, 1,'easeInBack');			
+		
 		results_message.show();		
 	},
 	
@@ -1484,7 +1501,12 @@ var game = {
 	
 	activate : async () => {
 					
-		
+					
+		//убираем часть рекорда чтобы он сохранился при выключении
+		game.return_penalty = Math.round(my_data.record * 0.1);
+		my_data.record -= game.return_penalty;
+		firebase.database().ref("players/"+my_data.uid+"/record").set(my_data.record-game.return_penalty);
+				
 		objects.ready_note.text = "Слушаем..."
 		await anim2.add(objects.ready_note,{alpha:[0, 1]}, true, 1,'linear');	
 		await anim2.add(objects.ready_note,{alpha:[1, 0]}, false, 1,'linear');			
@@ -1498,11 +1520,18 @@ var game = {
 		
 		//это сколько нот проиграно для бонуса
 		game.notes_played = 0;
+		
+		//будут ли показаны исполнители
+		let show_artist = rnd() > 0.5 ? 1 : 0;
 				
 		//показываеми варианты ответов
 		for (let i = 0 ; i < 6 ; i++) {			
 			let obj = objects['opt_'+i];
-			obj.artist.text = midi_songs[game.songs_opt[i]][0];
+			if (show_artist === 1)
+				obj.artist.text = midi_songs[game.songs_opt[i]][0];
+			else
+				obj.artist.text = "???";
+			
 			obj.song.text = midi_songs[game.songs_opt[i]][1];
 			obj.bcg.texture = gres.opt_bcg.texture;
 		}
@@ -1545,7 +1574,6 @@ var game = {
 				
 		game.faling_notes_shift = 0;
 		game.total_notes = 0;
-		game.avr_dif = 0;
 		let last_note_time = 0;
 				
 		//определяем параметры песни
@@ -1714,7 +1742,7 @@ var main_menu = {
 		anim2.add(objects.main_buttons_cont,{y:[800,objects.main_buttons_cont.sy]}, true, 1,'easeOutBack');	
 		await anim2.add(objects.header0,{y:[-400,objects.header0.sy]}, true, 1,'easeOutBack');	
 
-		anim3.add(objects.header0,['alpha'],[{time:0,val:[1]},{time:1.5,val:[0.2]},{time:3.1,val:[1]},{time:3.2,val:[0]},{time:3.3,val:[1]},{time:4,val:[0]},{time:4.2,val:[1]}],'linear',1);	
+		anim3.add(objects.header0,['alpha'],[{time:0,val:[1]},{time:1.1,val:[0.2]},{time:0.7,val:[1]},{time:0.2,val:[0]},{time:1.0,val:[1]},{time:1.2,val:[0]},{time:0.6,val:[1]}],'linear',1);	
 
 	},
 	
