@@ -1496,11 +1496,9 @@ var game = {
 				objects.random_image.alpha=0.5;
 				return;	
 			}		
-		}
-				
+		}				
 		
-		let loader=new PIXI.Loader();
-		
+		let loader=new PIXI.Loader();		
 		await new Promise(function(resolve, reject) {			
 			loader.add('puzzle_img', 'https://picsum.photos/400?id='+irnd(0,99999999),{loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE, timeout: 4000});						
 			loader.load(function(l,r) {	resolve(l) });
