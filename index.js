@@ -240,38 +240,38 @@ var anim3 = {
 					let time_passed = game_tick - s.start_time;
 					let next_point_time = s.schedule[s.next_point].time;
 					
-					//если пришло время следующей точки то устанавливаем параметры из нее
+					//если пришло время следующей точки
 					if (time_passed > next_point_time) {
 						
+						//устанавливаем параметры точки
 						for (let i=0;i<s.params.length;i++)
-							s.obj[s.params[i]]=s.schedule[s.next_point].val[i]
-											
+							s.obj[s.params[i]]=s.schedule[s.next_point].val[i];
+												
 						s.next_point++;		
 						
 						//начинаем опять отчет времени
 						s.start_time = game_tick;	
 						
+						//если следующая точка - не существует
 						if (s.next_point === s.schedule.length) {							
 
 							if (s.repeat === 1) {
 								s.start_time = game_tick
 								s.next_point = 1;
-								
-								
 							}
-							else
-								this.slot[i]=null;							
+							else {								
+								s.p_resolve('finished');
+								this.slot[i]=null;									
+							}
+						
 						}
-					}
-					
-					
+					}					
 				}
 				else
 				{
 					//это вариант с твинами между контрольными точками
 					
-					if (s.obj.ready === true) {
-						
+					m_lable : if (s.obj.ready === true) {						
 						
 						//если больше нет контрольных точек то убираем слот или начинаем сначала
 						if (s.next_point === s.schedule.length) {
@@ -283,25 +283,29 @@ var anim3 = {
 							else {
 								s.p_resolve('finished');
 								this.slot[i]=null;	
-							}					
-						} else {
+								break m_lable;
+							}			
+						}					
+
 							
-							let p0 = s.schedule[s.cur_point];
-							let p1 = s.schedule[s.next_point];
-							let time = p1.time;
+						let p0 = s.schedule[s.cur_point];
+						let p1 = s.schedule[s.next_point];
+						let time = p1.time;
+						
+						//заполняем расписание для анимации №2
+						let cur_schedule={};							
+						for (let i = 0 ; i < s.params.length ; i++) {						
+							let p = s.params[i];
+							cur_schedule[p]=[p0.val[i],p1.val[i]]						
+						}					
+						
+						//активируем анимацию
+						anim2.add(s.obj,cur_schedule,true,time,s.func,1);	
+						
+						s.cur_point++;
+						s.next_point++;							
 							
-							let cur_schedule={};	
-							
-							for (let i = 0 ; i < s.params.length ; i++) {						
-								let p = s.params[i];
-								cur_schedule[p]=[p0.val[i],p1.val[i]]						
-							}					
-							
-							anim2.add(s.obj,cur_schedule,true,time,s.func,1);		
-							s.cur_point++;
-							s.next_point++;							
-							
-						}						
+					
 					}		
 				}
 			}			
@@ -1485,6 +1489,16 @@ var game = {
 	
 	set_random_image : async () => {
 		
+		//если картинка уже есть то не спешим ее менять а просто показываем старую
+		if (objects.random_image.texture.width!==1) {
+			if (rnd()>0.2) {
+				await anim2.add(objects.random_image,{alpha:[0, 0.5]}, true, 1,'linear');	
+				objects.random_image.alpha=0.5;
+				return;	
+			}		
+		}
+				
+		
 		let loader=new PIXI.Loader();
 		
 		await new Promise(function(resolve, reject) {			
@@ -1718,6 +1732,9 @@ var cat_menu = {
 	
 	cat0_down: () => {
 		
+		if (objects.cat_menu_cont.ready === false)
+			return;
+		
 		game_res.resources.click.sound.play();
 		cat_menu.close();
 		game.activate();
@@ -1742,11 +1759,22 @@ var main_menu = {
 		anim2.add(objects.main_buttons_cont,{y:[800,objects.main_buttons_cont.sy]}, true, 1,'easeOutBack');	
 		await anim2.add(objects.header0,{y:[-400,objects.header0.sy]}, true, 1,'easeOutBack');	
 
-		anim3.add(objects.header0,['alpha'],[{time:0,val:[1]},{time:1.1,val:[0.2]},{time:0.7,val:[1]},{time:0.2,val:[0]},{time:1.0,val:[1]},{time:1.2,val:[0]},{time:0.6,val:[1]}],'linear',1);	
+		anim3.add(objects.header0,['alpha'],[
+		{time:0.0,val:[1]},
+		{time:0.5,val:[0.5]},
+		{time:0.3,val:[0.4]},
+		{time:0.4,val:[0.7]},
+		{time:0.6,val:[1]},
+		{time:0.2,val:[0.4]},
+		{time:0.4,val:[1]}]
+		,0,1);	
 
 	},
 	
 	next_down : async () => {
+		
+		if (objects.main_buttons_cont.ready === false)
+			return;
 
 		game_res.resources.click.sound.play();
 		
