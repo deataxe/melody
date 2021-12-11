@@ -943,6 +943,24 @@ var lb = {
 	
 }
 
+async function get_midi_stats() {
+	
+	for (let i = 0 ; i < Object.keys(midi_songs).length ; i++) {
+		
+		
+		let midi = await Midi.fromUrl("midi/"+i+".mid")
+		let track_num =0 ;
+		if (midi.tracks.length === 2)
+			track_num = 1;
+		
+		let notes = midi.tracks[track_num].notes;				
+		
+		console.log('№'+i,' ' , notes.length)
+	
+	}
+	
+}
+
 function init_game_env() {
 			
 		
@@ -964,10 +982,9 @@ function init_game_env() {
 
 	//создаем аудиоконтекст
 	audio_context = new (window.AudioContext || window.webkitAudioContext)();	
-	eval(gres.piano.data);
-	instruments.prepare_buffer('acoustic_grand_piano');
-	
-	
+	eval(gres.instrument_res.data);
+	instruments.prepare_buffer();
+		
 	
     app = new PIXI.Application({width: M_WIDTH, height: M_HEIGHT, antialias: false, forceCanvas: false, backgroundAlpha:0.5});
     document.body.appendChild(app.view);
@@ -1091,8 +1108,6 @@ function init_game_env() {
 		alert(e);
 	});
 		
-	
-	
 	main_menu.activate();
 	
     //запускаем главный цикл
@@ -1111,7 +1126,7 @@ var calibration = {
 		
 			//это источник звука
 			var source = audio_context.createBufferSource();
-			source.buffer = instruments.buffers['acoustic_grand_piano'][noteToKey[note]];			
+			source.buffer = instruments.buffers[noteToKey[note]];			
 			source.connect(audio_context.destination);			
 	
 			source.gainNode = audio_context.createGain();
@@ -1186,6 +1201,8 @@ let noteToKey = {}; // 108 ==  C8
 
 function load_resources() {
 	
+	//get_midi_stats();
+	//return;
 		
     game_res = new PIXI.Loader();
 		
@@ -1195,7 +1212,7 @@ function load_resources() {
 	//let git_src="https://akukamil.github.io/melody/"
 	let git_src=""
 	
-	game_res.add('piano',git_src+'soundfont/acoustic_grand_piano-ogg.js');
+	game_res.add('instrument_res',git_src+'soundfont/acoustic_grand_piano-ogg.js');
 	
 	
 	game_res.add("m2_font", git_src+"m_font.fnt");
@@ -1316,8 +1333,7 @@ var instruments = {
 
 		return uarray;	
 	},
-	
-	
+		
 	loadScript : src => {
 	  return new Promise((resolve, reject) => {
 		const script = document.createElement('script')
@@ -1329,28 +1345,14 @@ var instruments = {
 	  })
 	},	
 
-	load_from_file : async (instrument) => {
+	prepare_buffer : async () => {
 		
-		let file_name = 'soundfont/' + instrument + '-ogg.js'
-		await instruments.loadScript(file_name);
-		instruments.buffers[instrument] ={};
+		instruments.buffers ={};
 		
-		for (let key in g_instrument.acoustic_grand_piano) {
-			var base64 = g_instrument.acoustic_grand_piano[key].split(',')[1];
+		for (let key in g_instrument) {
+			var base64 = g_instrument[key].split(',')[1];
 			var buffer = instruments.decodeArrayBuffer(base64);			
-			instruments.buffers[instrument][key] = await audio_context.decodeAudioData(buffer)
-		}		
-		
-	},
-	
-	prepare_buffer : async (instrument) => {
-		
-		instruments.buffers[instrument] ={};
-		
-		for (let key in g_instrument[instrument]) {
-			var base64 = g_instrument[instrument][key].split(',')[1];
-			var buffer = instruments.decodeArrayBuffer(base64);			
-			instruments.buffers[instrument][key] = await audio_context.decodeAudioData(buffer)
+			instruments.buffers[key] = await audio_context.decodeAudioData(buffer)
 		}			
 	}
 	
@@ -1362,8 +1364,8 @@ var game = {
 	last_play_event : 0,
 	song_id : 0,
 	total_notes : 0,
-	faling_notes_shift : 0,
 	song_length : 0,
+	recently_played : [],
 	return_penalty : 0,	
 	correct_answers_row : 0,
 	notes_played : 0,
@@ -1381,7 +1383,7 @@ var game = {
 				
 		//это источник звука
 		var source = audio_context.createBufferSource();
-		source.buffer = instruments.buffers['acoustic_grand_piano'][note_id];			
+		source.buffer = instruments.buffers[note_id];			
 		source.connect(audio_context.destination);			
 			
 		
@@ -1441,6 +1443,52 @@ var game = {
 		
 	},
 	
+	show_lights: async() => {
+		
+				
+		await Promise.all([		
+		
+			anim3.add(objects.dir_light_0,['rotation','alpha'],[
+			{time:0,val:[0,0]},
+			{time:0.7,val:[-1.5,1]},
+			{time:0.9,val:[-0.1,1]},
+			{time:0.4,val:[-1.4,1]},
+			{time:0.6,val:[-0.2,1]},
+			{time:0.9,val:[-1.4,1]},
+			{time:0.7,val:[0,1]}
+			],'easeInOutCubic'),
+			
+			anim3.add(objects.dir_light_1,['rotation','alpha'],[
+			{time:0,val:[0,0]},
+			{time:0.3,val:[-0.7,1]},
+			{time:0.6,val:[0.7,1]},
+			{time:0.4,val:[-0.7,1]},
+			{time:0.6,val:[0.7,1]},
+			{time:0.3,val:[-0.7,1]},
+			{time:0.7,val:[0,1]}
+			],'easeInOutCubic'),
+			
+			anim3.add(objects.dir_light_2,['rotation','alpha'],[
+			{time:0,val:[0,0]},
+			{time:0.3,val:[1.4,1]},
+			{time:0.7,val:[0.3,1]},
+			{time:0.4,val:[1.3,1]},
+			{time:0.8,val:[0.1,1]},
+			{time:0.4,val:[1.3,1]},
+			{time:0.7,val:[0,1]}]
+			,'easeInOutCubic'),	
+		
+		])
+		
+		anim2.add(objects.dir_light_0,{alpha:[1, 0]}, false, 1,'linear');
+		anim2.add(objects.dir_light_1,{alpha:[1, 0]}, false, 1,'linear');
+		anim2.add(objects.dir_light_2,{alpha:[1, 0]}, false, 1,'linear');
+
+
+		
+		
+	},
+	
 	opt_down: async (id) => {
 		
 		if (state!=="playing")
@@ -1449,6 +1497,11 @@ var game = {
 		game_res.resources.click.sound.play();
 				
 		if (game.song_id === id) {
+			
+			//запускаем анимацию правильного ответа
+			game.show_lights();
+			
+			
 			game.correct_answers_row++;
 			game_res.resources.applause.sound.play();
 			objects['opt_'+id].bcg.texture = gres.opt_correct.texture;
@@ -1462,6 +1515,14 @@ var game = {
 
 		//останавливаем игру
 		game.stop();	
+	},
+	
+	no_answer : () => {
+		
+		game.correct_answers_row = 0;
+		game_res.resources.lose.sound.play();
+		game.stop();	
+		
 	},
 	
 	stop : async () => {
@@ -1489,9 +1550,12 @@ var game = {
 	
 	set_random_image : async () => {
 		
+	
+		
 		//если картинка уже есть то не спешим ее менять а просто показываем старую
 		if (objects.random_image.texture.width!==1) {
-			if (rnd()>0.2) {
+			let r_val = rnd();
+			if (r_val>0.2) {
 				await anim2.add(objects.random_image,{alpha:[0, 0.5]}, true, 1,'linear');	
 				objects.random_image.alpha=0.5;
 				return;	
@@ -1527,8 +1591,15 @@ var game = {
 		//получаем набор вариантов
 		game.songs_opt = game.get_opt();
 		
-		//выбираем случайную песню
-		game.song_id = irnd(0, 6);
+		//выбираем случайную песню которая не играла в последнее время
+		for(let z =0; z<100;z++){
+			game.song_id = irnd(0, 6);		
+			if (game.recently_played.includes(game.songs_opt[game.song_id])===false)
+				break;			
+		}		
+		game.recently_played.push(game.songs_opt[game.song_id]);
+		if (game.recently_played.length>15)
+			game.recently_played.pop();
 		
 		//это сколько нот проиграно для бонуса
 		game.notes_played = 0;
@@ -1561,6 +1632,8 @@ var game = {
 	
 	play_midi : async () => {
 				
+				
+		//отображаем исполнителя и песню в консоли
 		let artist = midi_songs[game.songs_opt[game.song_id]][0];
 		let song = midi_songs[game.songs_opt[game.song_id]][1];
 		console.log(`Играем: ${artist} - ${song} №${game.songs_opt[game.song_id]}`)
@@ -1573,36 +1646,31 @@ var game = {
 		if (midi.tracks.length === 2)
 			track_num = 1;
 		
-		let notes = midi.tracks[track_num].notes;
-				
+		let notes = midi.tracks[track_num].notes;				
 		
-		//создаем расписание нот для проигрывания
+		//создаем расписание нот в аудиобуффер
 		notes.forEach(note => {
 			game.add_note(noteToKey[note.midi], note.time, note.duration);
 		})	
 
+		
 		game.start_time = Date.now();
 		state = "playing";
 				
-		game.faling_notes_shift = 0;
-		game.total_notes = 0;
+		game.total_notes = notes.length;
 		let last_note_time = 0;
 				
-		//определяем параметры песни
-		let min_note = 9999;
-		let max_note = -9999;
+		//определяем параметры песни		
 		let unique_notes = {};
 		for (let i = 0 ; i < notes.length ; i++) {
-			
-			game.song_length = notes[i].time;
-			game.total_notes ++;		
 			let note_num = notes[i].midi;
 			unique_notes[note_num]=note_num;
-			note_num > max_note && (max_note = note_num);
-			note_num < min_note && (min_note = note_num);
-			
 		}
 		
+		//это время всей песни (когда кончается последняя нота)
+		let last_note_id = notes.length - 1;
+		game.song_time = notes[last_note_id].time + notes[last_note_id].duration;
+				
 		//делаем ноты по порядку (по возрастанию)		
 		let num_of_notes = Object.keys(unique_notes).length;
 		let note_width = 450 / num_of_notes;
@@ -1611,30 +1679,36 @@ var game = {
 			unique_notes[key] = ind;
 			ind++;			
 		}
-			
-		
+				
 		//убираем все падающие ноты
 		objects.faling_notes.forEach(n=>{n.visible=false});
 		
-		//определяем падающие ноты
-		let iter = 0;
-		for (let i = 0 ; i < notes.length ; i++) {		
+		//определяем координаты падающих нот
+		let i = 0;
+		for (i = 0 ; i < notes.length ; i++) {		
 		
+			//определяем положение ноты по X
 			let note_num = notes[i].midi;
-			let note_height = 2000 * notes[i].duration / game.song_length;
-			objects.faling_notes[iter].duration = notes[i].duration;
-			objects.faling_notes[iter].height = note_height - 3;
-			objects.faling_notes[iter].width = note_width-6;
-			objects.faling_notes[iter].x = 3 + unique_notes[note_num] * note_width;
-			objects.faling_notes[iter].sy = objects.faling_notes[iter].y = 350 - 2000 * notes[i].time / game.song_length;
-			objects.faling_notes[iter].visible = true;
-			objects.faling_notes[iter].alpha=0.5
+			objects.faling_notes[i].x = 3 + unique_notes[note_num] * note_width;			
 			
-			//let col =  rnd2(0.8,1);
-			objects.faling_notes[iter].tint = PIXI.utils.rgb2hex([rnd2(0.8,1), rnd2(0.8,1), rnd2(0.8,1)]);
-			objects.faling_notes[iter].played = 0;
-			iter ++;
+			
+			let note_height = 2000 * notes[i].duration / game.song_time;
+			objects.faling_notes[i].duration = notes[i].duration;
+			objects.faling_notes[i].height = note_height - 3;
+			objects.faling_notes[i].width = note_width-6;
+
+			//начальное положение нот по Y
+			objects.faling_notes[i].sy = objects.faling_notes[i].y = 350 - 2000 * notes[i].time / game.song_time;
+			objects.faling_notes[i].visible = true;
+			objects.faling_notes[i].alpha=0.5
+			
+			objects.faling_notes[i].tint = PIXI.utils.rgb2hex([rnd2(0.8,1), rnd2(0.8,1), rnd2(0.8,1)]);
+			objects.faling_notes[i].played = 0;
 		}
+		
+		//надпись о конце песни через 3 секунды после окончания песни
+		objects.game_end_note.sy = 350 - 2000 - 2000 * 3 / game.song_time;
+		
 		
 		await anim2.add(objects.faling_notes_cont,{alpha:[0,1]}, true, 1,'linear');	
 		
@@ -1657,19 +1731,17 @@ var game = {
 	},
 	
 	process : () => {
-		
-		
+				
 		if (state === "playing") {
 			
 			//сдесь секунды
 			let dif = (Date.now() - game.start_time) * 0.001;
-			let shift_y = (dif  - calibration.value*2 -  game.my_shift) / game.song_length;
+			let shift_y = (dif  - calibration.value * 2 -  game.my_shift) / game.song_time;
 			
 			for (let i = 0 ; i < game.total_notes ; i++) {
 				
 				objects.faling_notes[i].y = objects.faling_notes[i].sy + shift_y * 2000;
-				
-				
+								
 				if (objects.faling_notes[i].y > 350 && objects.faling_notes[i].played === 0) {
 					
 					objects.faling_notes[i].played = 1;
@@ -1679,15 +1751,18 @@ var game = {
 				
 				if (objects.faling_notes[i].visible === true && objects.faling_notes[i].ready !== false)
 					if (objects.faling_notes[i].y - objects.faling_notes[i].height  > 350)
-						anim2.add(objects.faling_notes[i],{alpha:[0.7, 0]}, false, 1,'linear');	
-					
-					
-			}			
+						anim2.add(objects.faling_notes[i],{alpha:[0.7, 0]}, false, 1,'linear');						
+			}		
+
+			//надпись о конце игры
+			objects.game_end_note.y = objects.game_end_note.sy + shift_y * 2000;
 			
-			if (dif > game.song_length + 3000) {
+			
+			
+			if (objects.game_end_note.y > 360) {
 				//alert(game.avr_dif / game.total_notes)
-				game.close("Не ответили");						
-			}			
+				game.no_answer();						
+			}		
 
 		}
 
