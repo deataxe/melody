@@ -372,7 +372,7 @@ class lb_player_card_class extends PIXI.Container{
 		
 		
 		this.name=new PIXI.BitmapText(' ', {fontName: 'Century Gothic', fontSize: 25});
-		this.name.x=50;
+		this.name.x=100;
 		this.name.y=20;
 		this.name.tint=0xffc000;
 		
