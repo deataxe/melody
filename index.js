@@ -507,6 +507,7 @@ var results_message = {
 		if (objects.results_exit.ready === false  || objects.results_message_cont.ready === false)
 			return;
 		game_res.resources.click.sound.play();
+		await show_ad();
 		await results_message.close();
 		await game.close();
 		main_menu.activate();
@@ -521,7 +522,7 @@ var results_message = {
 		
 		game_res.resources.click.sound.play();
 		
-		
+		await show_ad();
 		results_message.close();
 		game.restart();		
 		
