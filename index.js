@@ -1,4 +1,4 @@
-var M_WIDTH = 450, M_HEIGHT = 800, game_platform="", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="", audio_context;
+var M_WIDTH = 450, M_HEIGHT = 800, game_platform="", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="", audio_context, git_src;
 var g_process = () => {};
 var g_instrument ={};
 var instruments_names = ['acoustic_grand_piano','acoustic_guitar_nylon','acoustic_guitar_steel','electric_guitar_jazz','electric_piano_2','pad_1_new_age','koto','fx_1_rain','fx_3_crystal','fx_4_atmosphere','synth_brass_1','harpsichord','vibraphone'];
@@ -1308,7 +1308,7 @@ function load_resources() {
 	//короткая ссылка на ресурсы
 	gres=game_res.resources;
 	
-	let git_src="https://akukamil.github.io/melody/"
+	git_src="https://akukamil.github.io/melody/"
 	//let git_src=""
 	
 	game_res.add('instrument_res',git_src+'soundfont/electric_piano_2-ogg.js');
@@ -1737,7 +1737,7 @@ var game = {
 		game.audio_buffers =[];
 		
 		//загружаем миди файл
-		let midi = await Midi.fromUrl("midi/"+game.songs_opt[game.song_id]+".mid")
+		let midi = await Midi.fromUrl(git_src+"midi/"+game.songs_opt[game.song_id]+".mid")
 		let track_num =0 ;
 		if (midi.tracks.length === 2)
 			track_num = 1;
