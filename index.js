@@ -442,7 +442,7 @@ var results_message = {
 			objects.bonus_header.texture = gres.error_header.texture;			
 		}		
 		
-		await anim2.add(objects.results_message_cont,{y:[-500, objects.results_message_cont.sy]}, true, 2,'easeOutBack');
+		await anim2.add(objects.results_message_cont,{y:[-500, objects.results_message_cont.sy]}, true, 1.5,'easeOutBack');
 		
 		
 		

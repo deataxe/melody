@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+
+
+	<meta name="http-equiv" content="Content-type: text/html; charset=windows-1251">
+
+	<script src="https://www.gstatic.com/firebasejs/8.3.0/firebase-app.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/8.3.0/firebase-analytics.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/8.2.10/firebase-database.js"></script>
+
+<style>
+
+	table {
+	  font-family: arial, sans-serif;
+	  border-collapse: collapse;
+	  width: 100%;
+	  margin: 0px 0px 20px;
+	}
+
+	td, th {
+	  border: 1px solid #dddddd;
+	  text-align: left;
+	  height: 4px;
+	  width: 50px;
+	  padding: 8px;  
+	}
+
+</style>
+
+<table id="players_table">
+  <tr>
+	<th>ID</th>
+	<th>FirstName</th>
+	<th>Rating</th>
+	<th>tm</th>
+	<th>tm</th>
+  </tr>
+</table>
+
+
+<script>
+
+	var players_table = document.getElementById('players_table');
+	
+	var firebaseConfig = {
+		apiKey: "AIzaSyBG9xnBLS3eGtn7gy58hNVJBSBVUymxA0I",
+		authDomain: "melody-4ab2b.firebaseapp.com",
+		databaseURL: "https://melody-4ab2b-default-rtdb.europe-west1.firebasedatabase.app",
+		projectId: "melody-4ab2b",
+		storageBucket: "melody-4ab2b.appspot.com",
+		messagingSenderId: "950545734258",
+		appId: "1:950545734258:web:bddf99bf8907891702c0eb"
+	};
+	firebase.initializeApp(firebaseConfig);
+	firebase.analytics();
+	
+	//загружаем таблицу с данными всех игроков
+	let row_cnt=1;
+	let cur_ts=Date.now();
+	
+	/*
+	//загружаем всех и удаляем старые данные
+	firebase.database().ref("players").orderByChild('tm').limitToLast(20).on('value',(snapshot) => {
+	
+		players_table.innerHTML='';
+		var data=snapshot.val();
+		data = Object.keys(data).map((key) => [key, data[key].name,data[key].record,data[key].tm,new Date(data[key].tm).toLocaleString()]);
+		data = data.filter(function (e) {
+		  return e[3]!==undefined;
+		});
+		
+		data.sort(function(a, b){return a[3] - b[3]});
+	
+
+		data.forEach(p=>{
+		
+			var newRow = players_table.insertRow();
+			newRow.insertCell(0).appendChild(document.createTextNode(p[0].substring(0,15)));
+			newRow.insertCell(1).appendChild(document.createTextNode(p[1]));
+			newRow.insertCell(2).appendChild(document.createTextNode(p[2]));
+			newRow.insertCell(3).appendChild(document.createTextNode(p[3]));
+			newRow.insertCell(4).appendChild(document.createTextNode(p[4]));
+
+		})
+		window.scrollTo(0,document.body.scrollHeight);
+
+	})*/
+
+		
+	
+	
+	firebase.database().ref("players").orderByChild('tm').limitToLast(20).on('value',(snapshot) => {
+	
+		players_table.innerHTML='';
+		var data=snapshot.val();
+		data = Object.keys(data).map((key) => [key, data[key].name,data[key].record,data[key].tm,new Date(data[key].tm).toLocaleString()]);
+		data = data.filter(function (e) {
+		  return e[4]!==undefined;
+		});
+		
+		data.sort(function(a, b){return a[3] - b[3]});
+	
+
+		data.forEach(p=>{
+		
+			var newRow = players_table.insertRow();
+			newRow.insertCell(0).appendChild(document.createTextNode(p[0].substring(0,15)));
+			newRow.insertCell(1).appendChild(document.createTextNode(p[1]));
+			newRow.insertCell(2).appendChild(document.createTextNode(p[2]));
+			newRow.insertCell(3).appendChild(document.createTextNode(p[3]));
+			newRow.insertCell(4).appendChild(document.createTextNode(p[4]));
+
+
+	
+		})
+		window.scrollTo(0,document.body.scrollHeight);
+		
+
+	})
+
+		
+</script>
+
+
+
+</html>
