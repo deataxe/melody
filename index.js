@@ -558,7 +558,7 @@ var	show_ad = async function(){
 		//показываем рекламу		
 		await new Promise(resolve => {			
 			window.ysdk.adv.showFullscreenAdv({
-			  callbacks: {onClose: console.log('ok'), onError: console.log('ok2')}
+			  callbacks: {onClose: function(){resolve('ok')}, onError: function(){resolve('ok2')}}
 			})	
 		})
 	}
