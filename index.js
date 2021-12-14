@@ -510,16 +510,21 @@ var results_message = {
 		await results_message.close();
 		await game.close();
 		main_menu.activate();
+		
+		
 	},
 	
-	next_down : () => {
+	next_down : async () => {
 		
 		if (objects.results_next.ready === false || objects.results_message_cont.ready === false)
 			return;
 		
 		game_res.resources.click.sound.play();
+		
+		
 		results_message.close();
 		game.restart();		
+		
 		
 	},
 
@@ -544,23 +549,20 @@ var results_message = {
 
 }
 
-var	show_ad = function(){
+var	show_ad = async function(){
 		
-	if (game_platform==="YANDEX") {			
-		//показываем рекламу
-		window.ysdk.adv.showFullscreenAdv({
-		  callbacks: {
-			onClose: function() {}, 
-			onError: function() {}
-					}
+	if (game_platform==="YANDEX") {	
+	
+		//показываем рекламу		
+		await new Promise(resolve => {			
+			window.ysdk.adv.showFullscreenAdv({
+			  callbacks: {onClose: resolve('ok'), onError: resolve('ok')}
+			})	
 		})
 	}
 	
-	if (game_platform==="VK") {
-				 
-		vkBridge.send("VKWebAppShowNativeAds", {ad_format:"interstitial"})
-		.then(data => console.log(data.result))
-		.catch(error => console.log(error));	
+	if (game_platform==="VK") {				 
+		await vkBridge.send("VKWebAppShowNativeAds", {ad_format:"interstitial"})
 	}		
 }
 
