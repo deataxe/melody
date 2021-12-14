@@ -1,7 +1,8 @@
 var M_WIDTH = 450, M_HEIGHT = 800, game_platform="", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="", audio_context;
 var g_process = () => {};
 var g_instrument ={};
-
+var instruments_names = ['acoustic_grand_piano','acoustic_guitar_nylon','acoustic_guitar_steel','electric_guitar_jazz','electric_piano_2','pad_1_new_age','koto','fx_1_rain','fx_3_crystal','fx_4_atmosphere','synth_brass_1','harpsichord','vibraphone'];
+var some_process = [null,null,null,null,null,null,null,null];
 rnd= Math.random;
 rnd2= function(min,max) {	
 	let r=Math.random() * (max - min) + min
@@ -362,7 +363,7 @@ class lb_player_card_class extends PIXI.Container{
 		this.place=new PIXI.BitmapText("1", {fontName: 'Century Gothic', fontSize: 24});
 		this.place.x=20;
 		this.place.y=20;
-		this.place.tint=0x220022;
+		this.place.tint=0xffc000;
 		
 		this.avatar=new PIXI.Sprite();
 		this.avatar.x=40;
@@ -371,19 +372,18 @@ class lb_player_card_class extends PIXI.Container{
 		
 		
 		this.name=new PIXI.BitmapText(' ', {fontName: 'Century Gothic', fontSize: 25});
-		this.name.x=100;
+		this.name.x=50;
 		this.name.y=20;
-		this.name.tint=0x002222;
+		this.name.tint=0xffc000;
 		
 	
-		this.record=new PIXI.BitmapText(' ', {fontName: 'Century Gothic', fontSize: 30});
-		this.record.x=340;
-		this.record.tint=0x002222;
-		this.record.y=20;		
+		this.balance=new PIXI.BitmapText(' ', {fontName: 'Century Gothic', fontSize: 30});
+		this.balance.x=340;
+		this.balance.tint=0xffc000;
+		this.balance.y=20;		
 		
-		this.addChild(this.bcg,this.place, this.avatar, this.name, this.record);		
-	}
-	
+		this.addChild(this.bcg,this.place, this.avatar, this.name, this.balance);		
+	}	
 	
 }
 
@@ -427,12 +427,15 @@ var results_message = {
 		objects.bonus_line2.visible = false;
 		objects.bonus_total.visible = false;
 		
+		
+		
 		//это основной бонус который показываем правильно или нет ответили
 		let simple_bonus = game.correct_answers_row > 0 ?  1 : -game.return_penalty;
 		
 		//показываем надпись верно или нет
 		if (simple_bonus === 1) {			
-			objects.bonus_header.texture = gres.bonus_header.texture;				
+			objects.bonus_header.texture = gres.bonus_header.texture;	
+			anim2.add(objects.win_anim,{scale_xy:[0.3, 1.5],alpha:[0,1],rotation:[0,rnd2(1,2)]}, true, 3,'easeOutBack');
 		}		
 		else {			
 			game.return_penalty = 0;
@@ -440,6 +443,9 @@ var results_message = {
 		}		
 		
 		await anim2.add(objects.results_message_cont,{y:[-500, objects.results_message_cont.sy]}, true, 2,'easeOutBack');
+		
+		
+		
 		
 		let speed_bonus = (game.notes_played<10 && simple_bonus === 1)? 13 - game.notes_played : 0;
 		let combo_bonus = game.correct_answers_row > 1 ? game.correct_answers_row*2 : 0;
@@ -452,16 +458,31 @@ var results_message = {
 		objects.bonus_line2.text = combo_bonus;
 		objects.bonus_total.text = total_bonus;		
 		
-		if (simple_bonus > 0) gres.bonus0.sound.play();		
+		if (simple_bonus > 0)
+			gres.bonus0.sound.play();		
+		else
+			gres.nobonus.sound.play();
 		await anim3.add(objects.bonus_line0,['scale_xy'],[{time:0,val:[0]},{time:0.25,val:[2]},{time:0.5,val:[1]}],'easeInOutCubic');	
 
 		
-		if (speed_bonus > 0) gres.bonus1.sound.play();	
+		if (speed_bonus > 0)
+			gres.bonus1.sound.play();	
+		else
+			gres.nobonus.sound.play();
 		await anim3.add(objects.bonus_line1,['scale_xy'],[{time:0,val:[0]},{time:0.25,val:[2]},{time:0.5,val:[1]}],'easeInOutCubic');	
 		
-		if (combo_bonus > 0) gres.bonus2.sound.play();	
+		if (combo_bonus > 0)
+			gres.bonus2.sound.play();	
+		else
+			gres.nobonus.sound.play();
 		await anim3.add(objects.bonus_line2,['scale_xy'],[{time:0,val:[0]},{time:0.25,val:[2]},{time:0.5,val:[1]}],'easeInOutCubic');	
 		
+		
+		
+		if (total_bonus > 0)
+			gres.total_bonus.sound.play();
+		else
+			gres.nobonus.sound.play();		
 		await anim3.add(objects.bonus_total,['scale_xy'],[{time:0,val:[0]},{time:0.25,val:[2]},{time:0.5,val:[1]}],'easeInOutCubic');	
 		
 		results_message.ready = 1;	
@@ -469,7 +490,9 @@ var results_message = {
 		//записываем в базу новый рекорд
 		my_data.record = my_data.record + game.return_penalty + total_bonus
 		firebase.database().ref("players/"+my_data.uid+"/record").set(my_data.record);
-		objects.record_note.text = 'Баланс: '+my_data.record;
+		
+		//обновляем мой рекорд
+		objects.record_note.text = my_data.record;
 		
 		anim2.add(objects.results_exit,{scale_x:[0, 1]}, true, 1,'easeOutBack');
 		anim2.add(objects.results_next,{scale_x:[0, 1]}, true, 1,'easeOutBack');
@@ -480,7 +503,8 @@ var results_message = {
 	},
 	
 	exit_down : async () => {
-		if (results_message.ready === 0 )
+		
+		if (objects.results_exit.ready === false  || objects.results_message_cont.ready === false)
 			return;
 		game_res.resources.click.sound.play();
 		await results_message.close();
@@ -490,8 +514,9 @@ var results_message = {
 	
 	next_down : () => {
 		
-		if (results_message.ready === 0 )
+		if (objects.results_next.ready === false || objects.results_message_cont.ready === false)
 			return;
+		
 		game_res.resources.click.sound.play();
 		results_message.close();
 		game.restart();		
@@ -502,6 +527,9 @@ var results_message = {
 		
 		if (objects.results_message_cont.ready===false)
 			return;
+		
+		if (objects.win_anim.visible === true)
+		anim2.add(objects.win_anim,{scale_xy:[1.5, 0.3],alpha:[1,0],rotation:[objects.win_anim.rotation,0]}, false, 3,'easeInBack');
 		
 		await anim2.add(objects.results_message_cont,{y:[objects.results_message_cont.sy,800]}, false, 1,'easeInBack');
 		objects.bonus_line0.text='';
@@ -538,8 +566,8 @@ var	show_ad = function(){
 
 function vis_change() {
 	
-	if (document.hidden===true) {
-		//game.process_finish_game(1,0);
+	if (document.hidden===true && state === 'playing') {
+		game.no_answer();
 	}	
 }
 
@@ -561,8 +589,6 @@ var auth = function() {
 			},
 
 			init: function() {
-
-				g_process=function() { help_obj.process()};
 
 				let s = window.location.href;
 
@@ -792,7 +818,9 @@ var lb = {
 	activate: function() {
 			
 		
-	
+		anim2.add(objects.lb_1_cont,{x:[-150,objects.lb_1_cont.sx]},true,1,'linear');
+		anim2.add(objects.lb_2_cont,{x:[-150,objects.lb_2_cont.sx]},true,1,'linear');
+		anim2.add(objects.lb_3_cont,{x:[-150,objects.lb_3_cont.sx]},true,1,'linear');
 		anim2.add(objects.lb_cards_cont,{x:[450, 0]}, true, 1,'linear');
 		
 		objects.lb_cards_cont.visible=true;
@@ -832,7 +860,7 @@ var lb = {
 	
 	back_button_down: function() {
 		
-		if (any_dialog_active===1 || objects.lb_1_cont.ready===false) {
+		if (objects.lb_1_cont.ready===false) {
 			game_res.resources.locked.sound.play();
 			return
 		};	
@@ -849,97 +877,90 @@ var lb = {
 		
 		
 		firebase.database().ref("players").orderByChild('record').limitToLast(25).once('value').then((snapshot) => {
-			
-			if (snapshot.val()===null) {
-			  console.log("Что-то не получилось получить данные о рейтингах");
+
+		if (snapshot.val()===null) {
+			  //console.log("Что-то не получилось получить данные о рейтингах");
 			}
-			else {				
-				
-				
-				objects.lb_1_cont.cacheAsBitmap  = false;
-				objects.lb_2_cont.cacheAsBitmap  = false;
-				objects.lb_3_cont.cacheAsBitmap  = false;	
-				
+			else {
+
 				var players_array = [];
-				snapshot.forEach(players_data=> {			
-					if (players_data.val().name!=="" && players_data.val().name!=='')
-						players_array.push([players_data.val().name, players_data.val().record, players_data.val().pic_url]);	
+				snapshot.forEach(players_data=> {
+					if (players_data.val().name!=="" && players_data.val().name!=='' && players_data.val().name!==undefined)
+						players_array.push([players_data.val().name, players_data.val().record, players_data.val().pic_url]);
 				});
-				
+
 
 				players_array.sort(function(a, b) {	return b[1] - a[1];});
-				
-				
-				//загружаем аватары
+
+				//создаем загрузчик топа
 				var loader = new PIXI.Loader();
-								
+
 				var len=Math.min(10,players_array.length);
-				
+
 				//загружаем тройку лучших
 				for (let i=0;i<3;i++) {
-					let p = players_array[i];
-					if (p === undefined)
-						break;
 					
-					let fname=p[0];					
-					make_text(objects['lb_'+(i+1)+'_name'],fname,180);
-										
-					//objects['lb_'+(i+1)+'_name'].text=fname;
-					objects['lb_'+(i+1)+'_balance'].text = p[1];					
+					if (i >= len) break;		
+					if (players_array[i][0] === undefined) break;	
 					
-					
-					let pic_url = p[2];
-					
-					//меняем адрес который невозможно загрузить
-					if (pic_url==="https://vk.com/images/camera_100.png")
-						pic_url = "https://i.ibb.co/fpZ8tg2/vk.jpg";					
-					
-					loader.add('leaders_avatar_'+i, pic_url, {loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE, timeout: 4000});
+					let fname = players_array[i][0];
+					make_text(objects['lb_'+(i+1)+'_name'],fname,180);					
+					objects['lb_'+(i+1)+'_balance'].text=players_array[i][1];
+					loader.add('leaders_avatar_'+i, players_array[i][2],{loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE, timeout: 3000});
 				};
-				
+
 				//загружаем остальных
 				for (let i=3;i<10;i++) {
 					
-					let p = players_array[i];
+					if (i >= len) break;	
+					if (players_array[i][0] === undefined) break;	
+					
+					let fname=players_array[i][0];
 
-					if (p === undefined)
-						break;
-					
-					let fname=p[0];		
-					
-					make_text(objects.lb_cards[i-3].name,fname,200);
-					
-					objects.lb_cards[i-3].record.text=players_array[i][1]	;					
-					loader.add('leaders_avatar_'+i, players_array[i][2],{loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE, timeout: 3000});					
-					
+					make_text(objects.lb_cards[i-3].name,fname,180);
+
+					objects.lb_cards[i-3].balance.text=players_array[i][1];
+					loader.add('leaders_avatar_'+i, players_array[i][2],{loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE});
 				};
-				
-				
-				
-				loader.load((loader, resources) => {
-					
 
-					for (let i=0;i<3;i++)
-						objects['lb_'+(i+1)+'_avatar'].texture=resources['leaders_avatar_'+i].texture;						
+				loader.load();
 
-					objects.lb_1_cont.cacheAsBitmap  = true;
-					objects.lb_2_cont.cacheAsBitmap  = true;
-					objects.lb_3_cont.cacheAsBitmap  = true;		
-					
-					anim2.add(objects.lb_1_cont,{x:[450,objects.lb_1_cont.sx]}, false, 1,'linear');
-					anim2.add(objects.lb_2_cont,{x:[450,objects.lb_1_cont.sx]}, false, 1,'linear');
-					anim2.add(objects.lb_3_cont,{x:[450,objects.lb_1_cont.sx]}, false, 1,'linear');
-					
-					
-					for (let i=3;i<10;i++)						
-						objects.lb_cards[i-3].avatar.texture=resources['leaders_avatar_'+i].texture;
-
+				//показываем аватар как только он загрузился
+				loader.onProgress.add((loader, resource) => {
+					let lb_num=Number(resource.name.slice(-1));
+					if (lb_num<3)
+						objects['lb_'+(lb_num+1)+'_avatar'].texture=resource.texture
+					else
+						objects.lb_cards[lb_num-3].avatar.texture=resource.texture;
 				});
+
 			}
 
 		});
 		
 	}
+	
+}
+
+var rules = {
+	
+	activate : () => {
+		
+		anim2.add(objects.rules_cont,{y:[800,objects.rules_cont.sy]}, true, 1,'easeOutBack');		
+		
+	},
+	
+	
+	close : async () => {
+		
+		if (objects.rules_cont.ready === false)
+			return;
+		game_res.resources.click.sound.play();
+		
+		await anim2.add(objects.rules_cont,{y:[objects.rules_cont.sy, 800]}, false, 1,'easeInBack');
+		main_menu.activate();
+		
+	}	
 	
 }
 
@@ -961,9 +982,12 @@ async function get_midi_stats() {
 	
 }
 
-function init_game_env() {
+async function init_game_env() {
 			
-		
+    //запускаем главный цикл
+    main_loop();
+	
+	
 	//инициируем файербейс
 	if (firebase.apps.length===0) {
 		firebase.initializeApp({
@@ -980,7 +1004,10 @@ function init_game_env() {
 	document.getElementById("m_bar").outerHTML = "";
     document.getElementById("m_progress").outerHTML = "";
 
-	//создаем аудиоконтекст
+	//это событие когда меняется видимость приложения
+	document.addEventListener("visibilitychange", vis_change);
+
+	//создаем аудиоконтекст и загружаем аудиобуффер
 	audio_context = new (window.AudioContext || window.webkitAudioContext)();	
 	eval(gres.instrument_res.data);
 	instruments.prepare_buffer();
@@ -1063,55 +1090,52 @@ function init_game_env() {
         }
     }
 	
-	//загружаем данные
-    auth().then((val)=> {
-		
-		return new Promise(function(resolve, reject) {
-			let loader=new PIXI.Loader();
-			loader.add("my_avatar", my_data.pic_url,{loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE, timeout: 5000});						
-			loader.load(function(l,r) {	resolve(l) });
-		});
-		
-	}).then((loader)=> {		
-		
-		objects.id_avatar.texture=loader.resources.my_avatar.texture;		
-		make_text(objects.id_name,my_data.name,150);
-		
-		return firebase.database().ref("players/"+my_data.uid).once('value');
-		
-	}).then((snapshot)=>{
-		
-		let data=snapshot.val();
-				
-		if (data.record === undefined)
-			my_data.record = 0;
-		else
-			my_data.record = data.record;
-						
-		//обновляем данные в файербейс так как это мог быть новый игрок и у него должны быть занесены все данные
-		firebase.database().ref("players/"+my_data.uid+"/record").set(my_data.record);
-		
-		//устанавливаем баланс в попап
-		objects.id_record.text = my_data.record;	
-		
-					
-		activity_on=0;	
-		
-		return new Promise((resolve, reject) => {
-			setTimeout(resolve, 1500);
-		});
-		
-	}).then(()=>{		
+	//мини процесс вращения лупы
+	some_process[0]=function () {
 
-		anim2.add(objects.id_cont,{y:[objects.id_cont.y,-200]}, false, 1,'easeInBack');
-	}).catch(function(e){
-		alert(e);
-	});
+		objects.id_loup.x=20*Math.sin(game_tick*8)+90;
+		objects.id_loup.y=20*Math.cos(game_tick*8)+110;
+	};
+	
+	//загружаем данные игрока	
+	await auth();
+	let pic_loader=new PIXI.Loader();
+	
+	//загружаем аватарку
+	await new Promise(function(resolve, reject) {			
+		pic_loader.add("my_avatar", my_data.pic_url,{loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE, timeout: 5000});						
+		pic_loader.load(function(l,r) {	resolve(l) });
+	});		
+	
+	objects.id_avatar.texture=pic_loader.resources.my_avatar.texture;		
+	make_text(objects.id_name,my_data.name,150);
+	
+	//получаем данные из файербейс
+	let snapshot = await firebase.database().ref("players/"+my_data.uid).once('value');
 		
+	let data=snapshot.val();			
+	if (data.record === undefined)
+		my_data.record = 0;
+	else
+		my_data.record = data.record;
+					
+	//обновляем данные в файербейс так как это мог быть новый игрок и у него должны быть занесены все данные
+	firebase.database().ref("players/"+my_data.uid+"/record").set(my_data.record);
+	
+	//устанавливаем баланс в попап
+	objects.id_record.text = my_data.record;	
+	
+	//устанавливаем баланс в заголовок
+	objects.record_note.text = my_data.record;
+						
+	activity_on=0;			
+
+	anim2.add(objects.id_cont,{y:[objects.id_cont.y,-200]}, false, 1,'easeInBack');
+	some_process[0]=null;
+	
 	main_menu.activate();
 	
-    //запускаем главный цикл
-    main_loop();
+
 }
 
 var calibration = {
@@ -1184,6 +1208,81 @@ var calibration = {
 	
 }
 
+var instruments_dialog = {
+		
+	selected_id : 4,
+	
+	activate : async () => {	
+			
+		//восстанавливаем текстуру	
+		objects.instruments_ok_button.texture = gres.instruments_ok_button.texture;
+		objects.instruments_ok_button.interactive=true;
+		objects.instruments_ok_button.rotation = 0;
+		
+		objects.selected_frame.y = 120 + instruments_dialog.selected_id * 32 - 22; 
+		anim2.add(objects.instruments_dialog_cont,{y:[800,objects.instruments_dialog_cont.sy]}, true, 1,'easeOutBack');			
+	},
+	
+	close : () => {
+		
+		anim2.add(objects.instruments_dialog_cont,{y:[objects.instruments_dialog_cont.y,800]}, false, 1,'easeInBack');	
+		
+	},
+	
+	clicked : function(e) {
+		
+		if (objects.instruments_dialog_cont.ready === false)
+			return;
+		game_res.resources.click2.sound.play();
+		
+		//координаты указателя
+		var my = e.data.global.y/app.stage.scale.y;
+		
+		instruments_dialog.selected_id = Math.floor(13* ( my - 170 ) / 420);
+		if (instruments_dialog.selected_id <0) instruments_dialog.selected_id = 0;
+		if (instruments_dialog.selected_id >12) instruments_dialog.selected_id = 12;		
+		
+		objects.selected_frame.y = 120 + instruments_dialog.selected_id * 32 - 22; 
+		
+	},
+	
+	update_instrument : async () => {
+		
+		let instrument_loader = new PIXI.Loader();
+		instrument_loader.add('instrument_res','https://akukamil.github.io/melody/soundfont/' +  instruments_names[instruments_dialog.selected_id] + '-ogg.js',{timeout: 5000});
+		
+		//показываем кнопку перезагрузки
+		objects.instruments_ok_button.interactive = false;
+		objects.instruments_ok_button.texture = gres.reload_image.texture;
+		
+		anim3.add(objects.instruments_ok_button,['rotation'],[{time:0,val:[0]},{time:5,val:[3.15]},{time:10,val:[3.8]}],'linear');
+		
+		await new Promise(function(resolve, reject) {			
+			instrument_loader.load(function(l,r) {	resolve(l) });
+		});		
+		
+		anim3.kill_anim(objects.instruments_ok_button);
+		anim2.kill_anim(objects.instruments_ok_button);
+		
+		eval(instrument_loader.resources.instrument_res.data);
+		instruments.prepare_buffer();
+		
+	},
+	
+	ok_down: async () => {
+		
+		if (objects.instruments_dialog_cont.ready === false)
+			return;
+		game_res.resources.click.sound.play();
+		
+		await instruments_dialog.update_instrument();
+		instruments_dialog.close();
+		main_menu.activate();		
+		
+	}
+	
+}
+
 let keyToNote = {}; // C8  == 108
 let noteToKey = {}; // 108 ==  C8
 
@@ -1212,20 +1311,24 @@ function load_resources() {
 	//let git_src="https://akukamil.github.io/melody/"
 	let git_src=""
 	
-	game_res.add('instrument_res',git_src+'soundfont/acoustic_grand_piano-ogg.js');
+	game_res.add('instrument_res',git_src+'soundfont/electric_piano_2-ogg.js');
 	
 	
 	game_res.add("m2_font", git_src+"m_font.fnt");
 
 	game_res.add('message',git_src+'sounds/message.mp3');
-	game_res.add('click',git_src+'sounds/click.wav');
+	game_res.add('click',git_src+'sounds/click.mp3');
+	game_res.add('click2',git_src+'sounds/click2.mp3');
 	game_res.add('close',git_src+'sounds/close.mp3');
 	game_res.add('lose',git_src+'sounds/lose.mp3');
 	game_res.add('locked',git_src+'sounds/locked.mp3');
 	game_res.add('applause',git_src+'sounds/applause.mp3');
-	game_res.add('bonus0',git_src+'sounds/bonus0.wav');
+	game_res.add('bonus0',git_src+'sounds/bonus0.mp3');
 	game_res.add('bonus1',git_src+'sounds/bonus1.mp3');
 	game_res.add('bonus2',git_src+'sounds/bonus2.mp3');
+	game_res.add('nobonus',git_src+'sounds/nobonus.wav');
+	game_res.add('total_bonus',git_src+'sounds/total_bonus.mp3');
+	
 	
     //добавляем из листа загрузки
     for (var i = 0; i < load_list.length; i++) {
@@ -1273,6 +1376,10 @@ function main_loop() {
 	//обработка анимаций
 	anim2.process();
 	anim3.process();
+	
+	for (let i = 0 ; i < 5 ; i++)
+		if (some_process[i]!==null)
+			some_process[i]();
 
 	
     requestAnimationFrame(main_loop);
@@ -1334,17 +1441,6 @@ var instruments = {
 		return uarray;	
 	},
 		
-	loadScript : src => {
-	  return new Promise((resolve, reject) => {
-		const script = document.createElement('script')
-		script.type = 'text/javascript'
-		script.onload = resolve
-		script.onerror = reject
-		script.src = src
-		document.head.appendChild(script)
-	  })
-	},	
-
 	prepare_buffer : async () => {
 		
 		instruments.buffers ={};
@@ -1834,12 +1930,12 @@ var main_menu = {
 
 		anim3.add(objects.header0,['alpha'],[
 		{time:0.0,val:[1]},
-		{time:0.5,val:[0.5]},
-		{time:0.3,val:[0.4]},
-		{time:0.4,val:[0.7]},
-		{time:0.6,val:[1]},
+		{time:0.3,val:[0.5]},
 		{time:0.2,val:[0.4]},
-		{time:0.4,val:[1]}]
+		{time:0.3,val:[0.7]},
+		{time:0.5,val:[1]},
+		{time:0.2,val:[0.4]},
+		{time:0.3,val:[1]}]
 		,0,1);	
 
 	},
@@ -1848,7 +1944,6 @@ var main_menu = {
 		
 		if (objects.main_buttons_cont.ready === false)
 			return;
-
 		game_res.resources.click.sound.play();
 		
 		main_menu.close();		
@@ -1863,10 +1958,46 @@ var main_menu = {
 		
 	},
 	
-	close : () => {
+	lb_down : async () => {
 		
-		anim2.add(objects.main_buttons_cont,{y:[objects.main_buttons_cont.sy,800]}, false, 1,'easeInBack');	
-		anim2.add(objects.header0,{y:[objects.header0.y,-400]}, false, 1,'easeInBack');
+		if (objects.main_buttons_cont.ready === false)
+			return;
+		game_res.resources.click.sound.play();
+		
+		main_menu.close();
+		lb.activate();	
+		
+	},
+	
+	rules_button_down : async () => {
+		
+		
+		if (objects.main_buttons_cont.ready === false)
+			return;
+		game_res.resources.click.sound.play();
+		
+		main_menu.close();
+		rules.activate();	
+		
+		
+	},
+	
+	instruments_button_down : async () => {
+		
+		
+		if (objects.main_buttons_cont.ready === false)
+			return;
+		game_res.resources.click.sound.play();
+		
+		await main_menu.close();
+		instruments_dialog.activate();		
+	},
+	
+	close : async () => {
+		await Promise.all([			
+			anim2.add(objects.main_buttons_cont,{y:[objects.main_buttons_cont.sy,800]}, false, 1,'easeInBack'),
+			anim2.add(objects.header0,{y:[objects.header0.y,-400]}, false, 1,'easeInBack')		
+		]);
 	}
 	
 }
