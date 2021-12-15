@@ -758,7 +758,7 @@ var auth = function() {
 					let rand_uid=Math.floor(Math.random() * 9999999);
 
 					my_data.name 		=	rnd_names[rnd_num]+rand_uid;
-					my_data.rating 		= 	1400;
+					my_data.record 		= 	0;
 					my_data.uid			=	"ls"+rand_uid;
 					my_data.pic_url		=	'https://avatars.dicebear.com/v2/male/'+irnd(10,10000)+'.svg';
 
@@ -1732,7 +1732,10 @@ var game = {
 		game.notes_played = 0;
 		
 		//будут ли показаны исполнители
-		let show_artist = rnd() > 0.5 ? 1 : 0;
+		let show_artist = 1
+		if (my_data.rating > 100)
+			if (rnd() > 0.5)
+				show_artist = 0;
 				
 		//показываеми варианты ответов
 		for (let i = 0 ; i < 6 ; i++) {			
