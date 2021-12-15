@@ -494,9 +494,14 @@ var results_message = {
 		//обновляем мой рекорд
 		objects.record_note.text = my_data.record;
 		
-		anim2.add(objects.results_exit,{scale_x:[0, 1]}, true, 1,'easeOutBack');
-		anim2.add(objects.results_next,{scale_x:[0, 1]}, true, 1,'easeOutBack');
-						
+
+		
+		if (game_platform === 'VK') {			
+			anim2.add(objects.results_exit,{scale_x:[0, 1]}, true, 1,'easeOutBack');
+			anim2.add(objects.results_next,{scale_x:[0, 1]}, true, 1,'easeOutBack');		
+		}
+			anim2.add(objects.vk_share_button,{scale_x:[0, 1]}, true, 1,'easeOutBack');
+			anim2.add(objects.vk_invite_button,{scale_x:[0, 1]}, true, 1,'easeOutBack');							
 		return new Promise(function(resolve, reject){					
 			results_message.p_resolve = resolve;	  		  
 		});
@@ -544,9 +549,31 @@ var results_message = {
 		objects.bonus_total.text='';
 		objects.results_exit.visible=false;
 		objects.results_next.visible=false;
+		objects.vk_share_button.visible=false;
+		objects.vk_invite_button.visible=false;
 		
 		this.p_resolve("close");			
+	},
+	
+	vk_invite_down: function() {
+		
+        if (objects.vk_invite_button.ready === false)
+            return;
+		
+		if (game_platform==='VK')
+			vkBridge.send('VKWebAppShowInviteBox');
+	},
+	
+	vk_share_down: function() {
+		
+        if (objects.vk_share_button.ready === false)
+            return;
+		
+		if (game_platform==='VK')
+			vkBridge.send('VKWebAppShowWallPostBox', {"message": `Мой рекорд в игре Угадай Песню ${my_data.record}. А сколько наберешь ты?`,
+			"attachments": "https://vk.com/app7729354"});
 	}
+	
 
 }
 
@@ -1313,7 +1340,7 @@ function load_resources() {
 	gres=game_res.resources;
 	
 	git_src="https://akukamil.github.io/melody/"
-	//let git_src=""
+	//git_src=""
 	
 	game_res.add('instrument_res',git_src+'soundfont/electric_piano_2-ogg.js');
 	
