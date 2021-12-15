@@ -494,14 +494,14 @@ var results_message = {
 		//обновляем мой рекорд
 		objects.record_note.text = my_data.record;
 		
-
+		anim2.add(objects.results_exit,{scale_x:[0, 1]}, true, 1,'easeOutBack');
+		anim2.add(objects.results_next,{scale_x:[0, 1]}, true, 1,'easeOutBack');	
 		
 		if (game_platform === 'VK') {			
-			anim2.add(objects.results_exit,{scale_x:[0, 1]}, true, 1,'easeOutBack');
-			anim2.add(objects.results_next,{scale_x:[0, 1]}, true, 1,'easeOutBack');		
-		}
 			anim2.add(objects.vk_share_button,{scale_x:[0, 1]}, true, 1,'easeOutBack');
-			anim2.add(objects.vk_invite_button,{scale_x:[0, 1]}, true, 1,'easeOutBack');							
+			anim2.add(objects.vk_invite_button,{scale_x:[0, 1]}, true, 1,'easeOutBack');		
+		}
+						
 		return new Promise(function(resolve, reject){					
 			results_message.p_resolve = resolve;	  		  
 		});
