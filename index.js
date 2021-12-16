@@ -863,7 +863,7 @@ var lb = {
 		
 		anim2.add(objects.lb_1_cont,{x:[-150,objects.lb_1_cont.sx]},true,1,'linear');
 		anim2.add(objects.lb_2_cont,{x:[-150,objects.lb_2_cont.sx]},true,1,'linear');
-		anim2.add(objects.lb_3_cont,{x:[-150,objects.lb_3_cont.sx]},true,1,'linear');
+		
 		anim2.add(objects.lb_cards_cont,{x:[450, 0]}, true, 1,'linear');
 		
 		objects.lb_cards_cont.visible=true;
@@ -979,7 +979,8 @@ var lb = {
 					let lb_num=Number(resource.name.slice(-1));
 					if (lb_num<3) {
 						objects['lb_'+(lb_num+1)+'_avatar'].texture=resource.texture;
-						objects['lb_'+lb_num+'_cont'].cacheAsBitmap=true;						
+						objects['lb_'+lb_num+'_cont'].cacheAsBitmap=true;	
+						anim2.add(objects['lb_'+lb_num+'_cont'],{x:[-150,objects['lb_'+lb_num+'_cont'].sx]},true,1,'linear');
 					}
 					else {						
 						objects.lb_cards[lb_num-3].avatar.texture=resource.texture;						
