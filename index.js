@@ -1711,7 +1711,7 @@ var game = {
 					
 					
 		//убираем часть рекорда чтобы он сохранился при выключении
-		game.return_penalty = Math.round(my_data.record * 0.1);
+		game.return_penalty = Math.round(my_data.record * 0.2);
 		my_data.record -= game.return_penalty;
 		firebase.database().ref("players/"+my_data.uid+"/record").set(my_data.record-game.return_penalty);
 				
