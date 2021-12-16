@@ -975,9 +975,10 @@ var lb = {
 				loader.onProgress.add((loader, resource) => {
 					let lb_num=Number(resource.name.slice(-1));
 					if (lb_num<3) {
-						objects['lb_'+(lb_num+1)+'_avatar'].texture=resource.texture;
-						objects['lb_'+lb_num+'_cont'].cacheAsBitmap=true;	
-						anim2.add(objects['lb_'+lb_num+'_cont'],{x:[-150,objects['lb_'+lb_num+'_cont'].sx]},true,1,'linear');
+						let cont_num = lb_num + 1;
+						objects['lb_'+cont_num+'_avatar'].texture=resource.texture;
+						objects['lb_'+cont_num+'_cont'].cacheAsBitmap=true;	
+						anim2.add(objects['lb_'+cont_num+'_cont'],{x:[-150,objects['lb_'+cont_num+'_cont'].sx]},true,1,'linear');
 					}
 					else {						
 						objects.lb_cards[lb_num-3].avatar.texture=resource.texture;						
