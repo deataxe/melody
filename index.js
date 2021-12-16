@@ -939,9 +939,15 @@ var lb = {
 				var loader = new PIXI.Loader();
 
 				var len=Math.min(10,players_array.length);
+				
+				objects.lb_1_cont.cacheAsBitmap=false;
+				objects.lb_2_cont.cacheAsBitmap=false;
+				objects.lb_3_cont.cacheAsBitmap=false;
 
 				//загружаем тройку лучших
 				for (let i=0;i<3;i++) {
+					
+					objects['lb_'+(i+1)+'_cont'].cacheAsBitmap=false;
 					
 					if (i >= len) break;		
 					if (players_array[i][0] === undefined) break;	
@@ -971,10 +977,14 @@ var lb = {
 				//показываем аватар как только он загрузился
 				loader.onProgress.add((loader, resource) => {
 					let lb_num=Number(resource.name.slice(-1));
-					if (lb_num<3)
-						objects['lb_'+(lb_num+1)+'_avatar'].texture=resource.texture
-					else
-						objects.lb_cards[lb_num-3].avatar.texture=resource.texture;
+					if (lb_num<3) {
+						objects['lb_'+(lb_num+1)+'_avatar'].texture=resource.texture;
+						objects['lb_'+(i+1)+'_cont'].cacheAsBitmap=true;						
+					}
+					else {						
+						objects.lb_cards[lb_num-3].avatar.texture=resource.texture;						
+					}
+
 				});
 
 			}
