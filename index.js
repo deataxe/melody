@@ -746,7 +746,12 @@ var auth = function() {
 			local: function(repeat = 0) {
 
 				//ищем в локальном хранилище
-				let local_uid = localStorage.getItem('uid');
+				let local_uid = null;
+				try {
+					local_uid = localStorage.getItem('uid');
+				} catch (e) {
+					console.log(e);
+				}
 
 				//здесь создаем нового игрока в локальном хранилище
 				if (local_uid===undefined || local_uid===null) {
@@ -1339,8 +1344,8 @@ function load_resources() {
 	//короткая ссылка на ресурсы
 	gres=game_res.resources;
 	
-	git_src="https://akukamil.github.io/melody/"
-	//git_src=""
+	//git_src="https://akukamil.github.io/melody/"
+	git_src=""
 	
 	game_res.add('instrument_res',git_src+'soundfont/electric_piano_2-ogg.js');
 	
@@ -1490,6 +1495,7 @@ var game = {
 	play_start : 0,
 	last_play_event : 0,
 	song_id : 0,
+	correct_opt_id : 0,
 	total_notes : 0,
 	song_length : 0,
 	recently_played : [],
@@ -1552,24 +1558,7 @@ var game = {
 		game.my_shift +=0.01;
 		objects.shift_t.text = game.my_shift;
 	},
-	
-	get_opt : () => {
 		
-		let cur_arr = [];
-		
-		let max_val = Object.keys(midi_songs).length;
-		
-		while (cur_arr.length !== 6) {			
-			let id = irnd(0, max_val);
-			if (cur_arr.includes(id) === false) {
-				cur_arr.push(id);
-			}		
-		}
-		
-		return cur_arr;
-		
-	},
-	
 	show_lights: async() => {
 		
 				
@@ -1623,7 +1612,7 @@ var game = {
 				
 		game_res.resources.click.sound.play();
 				
-		if (game.song_id === id) {
+		if (game.correct_opt_id === id) {
 			
 			//запускаем анимацию правильного ответа
 			game.show_lights();
@@ -1637,7 +1626,7 @@ var game = {
 			game.correct_answers_row = 0;
 			game_res.resources.lose.sound.play();
 			objects['opt_'+id].bcg.texture = gres.opt_wrong.texture;
-			objects['opt_'+game.song_id].bcg.texture = gres.opt_correct.texture;				
+			objects['opt_'+game.correct_opt_id].bcg.texture = gres.opt_correct.texture;				
 		}
 
 		//останавливаем игру
@@ -1716,17 +1705,42 @@ var game = {
 				
 		
 		//получаем набор вариантов
-		game.songs_opt = game.get_opt();
+		let songs_len = Object.keys(midi_songs).length;
 		
-		//выбираем случайную песню которая не играла в последнее время
-		for(let z =0; z<100;z++){
-			game.song_id = irnd(0, 6);		
-			if (game.recently_played.includes(game.songs_opt[game.song_id])===false)
-				break;			
+		
+		//получаем 5 вариантов неправильных
+		game.songs_opt = [];		
+		for (let s = 0 ; s < 5 ; s++) {			
+			for ( let z = 0 ; z < 10000 ; z ++ ) {
+				let _song = irnd(0, songs_len);	
+				if (game.songs_opt.includes(_song)===false) {
+					game.songs_opt.push(_song);
+					break;					
+				}
+			}			
 		}		
-		game.recently_played.push(game.songs_opt[game.song_id]);
-		if (game.recently_played.length>15)
-			game.recently_played.pop();
+
+		
+		//выбираем случайную песню которая не играла в последнее время и не соответствует неправильным вариантам
+		for ( let z = 0 ; z < 10000 ; z ++ ) {
+			game.song_id = irnd(0, songs_len);	
+			if (game.recently_played.includes(game.song_id) === false && game.songs_opt.includes(game.song_id) === false)
+				break;
+		}
+		
+		//добавляем в список недавно прослушанных
+		game.recently_played.push(game.song_id);
+		if (game.recently_played.length>50)
+			game.recently_played.pop();		
+		
+		
+		console.log(game.recently_played);
+
+		
+		//добавляем правильный ответ в случайную позицию
+		game.correct_opt_id = irnd(0, 6);		
+		game.songs_opt.splice( game.correct_opt_id, 0, game.song_id );	
+		
 		
 		//это сколько нот проиграно для бонуса
 		game.notes_played = 0;
@@ -1764,14 +1778,14 @@ var game = {
 				
 				
 		//отображаем исполнителя и песню в консоли
-		let artist = midi_songs[game.songs_opt[game.song_id]][0];
-		let song = midi_songs[game.songs_opt[game.song_id]][1];
-		console.log(`Играем: ${artist} - ${song} №${game.songs_opt[game.song_id]}`)
+		let artist = midi_songs[game.song_id][0];
+		let song = midi_songs[game.song_id][1];
+		console.log(`Играем: ${artist} - ${song} №${game.song_id}`)
 			
 		game.audio_buffers =[];
 		
 		//загружаем миди файл
-		let midi = await Midi.fromUrl(git_src+"midi/"+game.songs_opt[game.song_id]+".mid")
+		let midi = await Midi.fromUrl(git_src+"midi/"+game.song_id+".mid")
 		let track_num =0 ;
 		if (midi.tracks.length === 2)
 			track_num = 1;
