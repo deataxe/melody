@@ -979,7 +979,7 @@ var lb = {
 					let lb_num=Number(resource.name.slice(-1));
 					if (lb_num<3) {
 						objects['lb_'+(lb_num+1)+'_avatar'].texture=resource.texture;
-						objects['lb_'+(i+1)+'_cont'].cacheAsBitmap=true;						
+						objects['lb_'+lb_num+'_cont'].cacheAsBitmap=true;						
 					}
 					else {						
 						objects.lb_cards[lb_num-3].avatar.texture=resource.texture;						
