@@ -1344,8 +1344,8 @@ function load_resources() {
 	//короткая ссылка на ресурсы
 	gres=game_res.resources;
 	
-	//git_src="https://akukamil.github.io/melody/"
-	git_src=""
+	git_src="https://akukamil.github.io/melody/"
+	//git_src=""
 	
 	game_res.add('instrument_res',git_src+'soundfont/electric_piano_2-ogg.js');
 	
