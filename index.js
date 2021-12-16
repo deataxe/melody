@@ -861,9 +861,6 @@ var lb = {
 	activate: function() {
 			
 		
-		anim2.add(objects.lb_1_cont,{x:[-150,objects.lb_1_cont.sx]},true,1,'linear');
-		anim2.add(objects.lb_2_cont,{x:[-150,objects.lb_2_cont.sx]},true,1,'linear');
-		
 		anim2.add(objects.lb_cards_cont,{x:[450, 0]}, true, 1,'linear');
 		
 		objects.lb_cards_cont.visible=true;
