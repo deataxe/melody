@@ -767,7 +767,14 @@ var auth = function() {
 					my_data.uid			=	"ls"+rand_uid;
 					my_data.pic_url		=	'https://avatars.dicebear.com/v2/male/'+irnd(10,10000)+'.svg';
 
-					localStorage.setItem('uid',my_data.uid);
+
+					try {
+						localStorage.setItem('uid',my_data.uid);
+					} catch (e) {
+						console.log(e);
+					}
+
+					
 					help_obj.process_results();
 				}
 				else
