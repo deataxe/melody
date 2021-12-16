@@ -570,7 +570,7 @@ var results_message = {
             return;
 		
 		if (game_platform==='VK')
-			vkBridge.send('VKWebAppShowWallPostBox', {"message": `Мой рекорд в игре Угадай Песню ${my_data.record}!. А сколько наберешь ты?`,
+			vkBridge.send('VKWebAppShowWallPostBox', {"message": `Мой рекорд в игре Угадай Песню ${my_data.record}! А сколько наберешь ты?`,
 			"attachments": "https://vk.com/app8027093"});
 	}
 	
