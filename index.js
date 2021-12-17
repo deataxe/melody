@@ -590,7 +590,8 @@ var	show_ad = async function(){
 		})
 	}
 	
-	if (game_platform==="VK") {				 
+	if (game_platform==="VK") {		
+		
 		await vkBridge.send("VKWebAppShowNativeAds", {ad_format:"interstitial"})
 	}		
 }
@@ -1708,6 +1709,9 @@ var game = {
 	},
 	
 	activate : async () => {
+		
+		//для отметки
+		firebase.database().ref("players/"+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
 					
 					
 		//убираем часть рекорда чтобы он сохранился при выключении
