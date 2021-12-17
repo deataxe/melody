@@ -591,8 +591,9 @@ var	show_ad = async function(){
 	}
 	
 	if (game_platform==="VK") {		
-		
-		await vkBridge.send("VKWebAppShowNativeAds", {ad_format:"interstitial"})
+
+		if (rnd()>0.666)
+			await vkBridge.send("VKWebAppShowNativeAds", {ad_format:"interstitial"})
 	}		
 }
 
