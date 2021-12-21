@@ -647,7 +647,7 @@ var auth = function() {
 					]).then(function(){
 						help_obj.vk()
 					}).catch(function(e){
-						alert(JSON.stringify(e));
+						alert('650 ' + JSON.stringify(e));
 					});
 					return;
 				}
@@ -724,7 +724,7 @@ var auth = function() {
 					
 				}).catch(function(e){
 					
-					alert(JSON.stringify(e));
+					alert('650 ' + JSON.stringify(e));
 					
 				});
 				
