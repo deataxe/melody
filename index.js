@@ -1748,7 +1748,7 @@ var game = {
 		
 		//добавляем в список недавно прослушанных
 		game.recently_played.push(game.song_id);
-		if (game.recently_played.length>50)
+		if (game.recently_played.length>70)
 			game.recently_played.shift();		
 		
 		
