@@ -1749,10 +1749,10 @@ var game = {
 		//добавляем в список недавно прослушанных
 		game.recently_played.push(game.song_id);
 		if (game.recently_played.length>50)
-			game.recently_played.pop();		
+			game.recently_played.shift();		
 		
 		
-		console.log(game.recently_played);
+		//console.log(game.recently_played);
 
 		
 		//добавляем правильный ответ в случайную позицию
