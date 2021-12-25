@@ -59,7 +59,7 @@
 	let total_removed=0;
 	
 	//загружаем всех и удаляем старые данные
-	firebase.database().ref("players").orderByChild('tm').limitToFirst(30).on('value',(snapshot) => {
+	firebase.database().ref("players").orderByChild('tm').limitToFirst(30).once('value',(snapshot) => {
 	
 		var data=snapshot.val();
 		data = Object.keys(data).map((key) => [key, data[key].name,data[key].tm]);
