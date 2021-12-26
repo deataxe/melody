@@ -1758,8 +1758,7 @@ var game = {
 		//добавляем правильный ответ в случайную позицию
 		game.correct_opt_id = irnd(0, 6);		
 		game.songs_opt.splice( game.correct_opt_id, 0, game.song_id );	
-		
-		
+				
 		//это сколько нот проиграно для бонуса
 		game.notes_played = 0;
 		
@@ -1784,12 +1783,22 @@ var game = {
 		//показыаем контейнер
 		await anim2.add(objects.opt_cont,{y:[800,objects.opt_cont.sy]}, true, 1.5,'easeOutSine');	
 
-		//устанавливаем случайную картинку на фон
+		game.show_year(midi_songs[game.song_id][2]);
+
+		//показываем год песни
 		game.set_random_image();
 		
 		g_process = function() {game.process()};
 		game.last_play_event = game_tick;
 		game.play_midi();
+	},
+	
+	show_year : async (y) => {
+		
+		objects.song_year.text = y +' год';
+		await anim2.add(objects.song_year,{alpha:[0,1]}, true, 5,'linear');	
+		await anim2.add(objects.song_year,{alpha:[1,0]}, false, 4,'linear');	
+		
 	},
 	
 	play_midi : async () => {
