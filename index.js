@@ -430,7 +430,7 @@ var results_message = {
 		
 		
 		//это основной бонус который показываем правильно или нет ответили
-		let simple_bonus = game.correct_answers_row > 0 ?  1 : -game.return_penalty;
+		let simple_bonus = game.correct_answers_row > 0 ?  1 : -Math.round(my_data.record * 0.2);
 		
 		//показываем надпись верно или нет
 		if (simple_bonus === 1) {			
@@ -438,7 +438,6 @@ var results_message = {
 			anim2.add(objects.win_anim,{scale_xy:[0.3, 1.5],alpha:[0,1],rotation:[0,rnd2(1,2)]}, true, 3,'easeOutBack');
 		}		
 		else {			
-			game.return_penalty = 0;
 			objects.bonus_header.texture = gres.error_header.texture;			
 		}		
 		
@@ -488,7 +487,7 @@ var results_message = {
 		results_message.ready = 1;	
 		
 		//записываем в базу новый рекорд
-		my_data.record = my_data.record + game.return_penalty + total_bonus
+		my_data.record = my_data.record + total_bonus
 		firebase.database().ref("players/"+my_data.uid+"/record").set(my_data.record);
 		
 		//обновляем мой рекорд
@@ -1351,6 +1350,7 @@ let noteToKey = {}; // 108 ==  C8
 
 function load_resources() {
 	
+
 	//get_midi_stats();
 	//return;
 		
@@ -1712,10 +1712,9 @@ var game = {
 		firebase.database().ref("players/"+my_data.uid+"/tm").set(firebase.database.ServerValue.TIMESTAMP);
 					
 					
-		//убираем часть рекорда чтобы он сохранился при выключении
-		game.return_penalty = Math.round(my_data.record * 0.2);
-		my_data.record -= game.return_penalty;
-		firebase.database().ref("players/"+my_data.uid+"/record").set(my_data.record);
+		//устанавливаем "выходной" рейтинг
+		let exit_rating = my_data.record - Math.round(my_data.record * 0.2);
+		firebase.database().ref("players/"+my_data.uid+"/record").set(exit_rating);
 				
 		objects.ready_note.text = "Слушаем..."
 		await anim2.add(objects.ready_note,{alpha:[0, 1]}, true, 1,'linear');	
