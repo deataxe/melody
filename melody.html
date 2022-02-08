@@ -54,18 +54,30 @@
 	firebase.initializeApp(firebaseConfig);
 	firebase.analytics();
 	
-	//загружаем таблицу с данными всех игроков
-	let cur_ts=Date.now();
-	let total_removed=0;
+
+	main();
 	
-	//загружаем всех и удаляем старые данные
-	firebase.database().ref("players").orderByChild('tm').limitToFirst(30).once('value',(snapshot) => {
+	async function main () {
 	
+		await load_for_clearing_old();
+		show_last();
+	
+	}
+	
+	
+	async function load_for_clearing_old() {
+	
+		//загружаем таблицу с данными всех игроков
+		let cur_ts=Date.now();
+		let total_removed=0;
+		
+		//загружаем всех и удаляем старые данные
+		let snapshot = await firebase.database().ref("players").orderByChild('tm').limitToFirst(3000).once('value')
+		
 		var data=snapshot.val();
 		data = Object.keys(data).map((key) => [key, data[key].name,data[key].tm]);
 		
-		data.forEach(p=>{
-		
+		data.forEach(p=>{		
 			let  days_without_visit=(cur_ts-p[2])/86400000;			
 			if (days_without_visit>20) {
 				firebase.database().ref("players/"+p[0]).remove();
@@ -73,38 +85,45 @@
 			}
 		})
 		alert("Total removed: "+total_removed);
-	})
 
 
+	}
+	
+	async function show_last() {
+	
+		firebase.database().ref("players").orderByChild('tm').limitToLast(20).on('value',(snapshot) => {
 		
-	
-	
-	firebase.database().ref("players").orderByChild('tm').limitToLast(20).on('value',(snapshot) => {
-	
-		players_table.innerHTML='';
-		var data=snapshot.val();
-		data = Object.keys(data).map((key) => [key, data[key].name,data[key].record,data[key].tm,new Date(data[key].tm).toLocaleString()]);
-		data = data.filter(function (e) {
-		  return e[4]!==undefined;
-		});
+			players_table.innerHTML='';
+			var data=snapshot.val();
+			data = Object.keys(data).map((key) => [key, data[key].name,data[key].record,data[key].tm,new Date(data[key].tm).toLocaleString()]);
+			data = data.filter(function (e) {
+			  return e[4]!==undefined;
+			});
+			
+			data.sort(function(a, b){return a[3] - b[3]});
 		
-		data.sort(function(a, b){return a[3] - b[3]});
-	
+			data.forEach(p=>{
+			
+				var newRow = players_table.insertRow();
+				newRow.insertCell(0).appendChild(document.createTextNode(p[0].substring(0,15)));
+				newRow.insertCell(1).appendChild(document.createTextNode(p[1]));
+				newRow.insertCell(2).appendChild(document.createTextNode(p[2]));
+				newRow.insertCell(3).appendChild(document.createTextNode(p[3]));
+				newRow.insertCell(4).appendChild(document.createTextNode(p[4]));
 
-		data.forEach(p=>{
-		
-			var newRow = players_table.insertRow();
-			newRow.insertCell(0).appendChild(document.createTextNode(p[0].substring(0,15)));
-			newRow.insertCell(1).appendChild(document.createTextNode(p[1]));
-			newRow.insertCell(2).appendChild(document.createTextNode(p[2]));
-			newRow.insertCell(3).appendChild(document.createTextNode(p[3]));
-			newRow.insertCell(4).appendChild(document.createTextNode(p[4]));
+			})
+			window.scrollTo(0,document.body.scrollHeight);			
 
 		})
-		window.scrollTo(0,document.body.scrollHeight);
-		
+	
+	}
+	
 
-	})
+
+		
+	
+	
+
 
 		
 </script>
