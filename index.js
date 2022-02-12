@@ -1065,6 +1065,12 @@ async function init_game_env() {
 	
     app = new PIXI.Application({width: M_WIDTH, height: M_HEIGHT, antialias: false, forceCanvas: false, backgroundAlpha:0.5});
     document.body.appendChild(app.view);
+	
+	let c = document.body.appendChild(app.view);
+	c.style["boxShadow"] = "0 0 15px #000000";
+	document.body.style.backgroundColor = 'rgb(' + 12 + ',' + 66 + ',' + 60 + ')';
+
+
 
     var resize = function () {
         const vpw = window.innerWidth; // Width of the viewport
