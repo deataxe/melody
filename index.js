@@ -743,6 +743,8 @@ var auth = function() {
 
 			local: function(repeat = 0) {
 
+				game_platform="YANDEX";
+				
 				//ищем в локальном хранилище
 				let local_uid = null;
 				try {
@@ -1746,6 +1748,8 @@ var game = {
 		
 		//выбираем случайную песню которая не играла в последнее время и не соответствует неправильным вариантам
 		for ( let z = 0 ; z < 10000 ; z ++ ) {
+			
+			//game.song_id = 164;
 			game.song_id = irnd(0, songs_len);	
 			if (game.recently_played.includes(game.song_id) === false && game.songs_opt.includes(game.song_id) === false)
 				break;
