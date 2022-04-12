@@ -1,4 +1,4 @@
-var M_WIDTH = 450, M_HEIGHT = 800, game_platform="", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="", audio_context, git_src;
+var M_WIDTH = 450, M_HEIGHT = 800, game_platform="", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="", audio_context, git_src, last_com_time=0;
 var g_process = () => {};
 var g_instrument ={};
 var instruments_names = ['acoustic_grand_piano','acoustic_guitar_nylon','acoustic_guitar_steel','electric_guitar_jazz','electric_piano_2','pad_1_new_age','koto','fx_1_rain','fx_3_crystal','fx_4_atmosphere','synth_brass_1','harpsichord','vibraphone'];
@@ -577,6 +577,11 @@ var results_message = {
 }
 
 var	show_ad = async function(){
+	
+	let time_since_last_com = (Date.now() - last_com_time)*0.001
+	if (time_since_last_com < 90)
+		return;
+	last_com_time = Date.now();
 	
 		
 	if (game_platform==="YANDEX") {	
@@ -1749,7 +1754,7 @@ var game = {
 		//выбираем случайную песню которая не играла в последнее время и не соответствует неправильным вариантам
 		for ( let z = 0 ; z < 10000 ; z ++ ) {
 			
-			//game.song_id = 164;
+			//game.song_id = 165;
 			game.song_id = irnd(0, songs_len);	
 			if (game.recently_played.includes(game.song_id) === false && game.songs_opt.includes(game.song_id) === false)
 				break;
