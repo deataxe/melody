@@ -1649,12 +1649,16 @@ var game = {
 			game.correct_answers_row++;
 			game_res.resources.applause.sound.play();
 			objects['opt_'+id].bcg.texture = gres.opt_correct.texture;
+			firebase.database().ref("songs_stat/"+game.song_id+"/" + "correct").set(firebase.database.ServerValue.increment(1));
 		}
 		else {
+			
 			game.correct_answers_row = 0;
 			game_res.resources.lose.sound.play();
 			objects['opt_'+id].bcg.texture = gres.opt_wrong.texture;
-			objects['opt_'+game.correct_opt_id].bcg.texture = gres.opt_correct.texture;				
+			objects['opt_'+game.correct_opt_id].bcg.texture = gres.opt_correct.texture;	
+			firebase.database().ref("songs_stat/"+game.song_id+"/" + "incorrect").set(firebase.database.ServerValue.increment(1));
+			
 		}
 
 		//останавливаем игру
@@ -1754,11 +1758,13 @@ var game = {
 		//выбираем случайную песню которая не играла в последнее время и не соответствует неправильным вариантам
 		for ( let z = 0 ; z < 10000 ; z ++ ) {
 			
-			//game.song_id = 165;
+			
 			game.song_id = irnd(0, songs_len);	
 			if (game.recently_played.includes(game.song_id) === false && game.songs_opt.includes(game.song_id) === false)
 				break;
 		}
+		
+		//game.song_id = 169;
 		
 		//добавляем в список недавно прослушанных
 		game.recently_played.push(game.song_id);
