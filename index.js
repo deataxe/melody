@@ -1832,7 +1832,7 @@ var game = {
 		let guesses = correct + incorrect;
 		if (guesses > 0) {
 			
-			let cor_rate = 	Math.round(correct / guesses);
+			let cor_rate = 	Math.round(100 * correct / guesses);
 			objects.song_year.text = 'Угадывают ' + cor_rate + '%';
 			await anim2.add(objects.song_year,{alpha:[0,1]}, true, 5,'linear');	
 			await anim2.add(objects.song_year,{alpha:[1,0]}, false, 4,'linear');	
