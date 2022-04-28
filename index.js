@@ -1803,9 +1803,10 @@ var game = {
 		//показыаем контейнер
 		await anim2.add(objects.opt_cont,{y:[800,objects.opt_cont.sy]}, true, 1.5,'easeOutSine');	
 
+		//показываем год и статистику песни
 		game.show_year(midi_songs[game.song_id][2]);
 
-		//показываем год песни
+		//показываем картинку
 		game.set_random_image();
 		
 		g_process = function() {game.process()};
@@ -1818,6 +1819,28 @@ var game = {
 		objects.song_year.text = y +' год';
 		await anim2.add(objects.song_year,{alpha:[0,1]}, true, 5,'linear');	
 		await anim2.add(objects.song_year,{alpha:[1,0]}, false, 4,'linear');	
+		
+		let song_stat = await firebase.database().ref("songs_stat/"+game.song_id).once('value');
+		song_stat = song_stat.val();		
+		if (song_stat === null || song_stat === undefined)
+			return;
+		
+		
+
+		let correct = song_stat.correct || 0;
+		let incorrect = song_stat.incorrect || 0;
+		let guesses = correct + incorrect;
+		if (guesses > 0) {
+			
+			let cor_rate = 	Math.round(correct / guesses);
+			objects.song_year.text = 'Угадывают ' + cor_rate + '%';
+			await anim2.add(objects.song_year,{alpha:[0,1]}, true, 5,'linear');	
+			await anim2.add(objects.song_year,{alpha:[1,0]}, false, 4,'linear');	
+			
+		}
+
+
+		
 		
 	},
 	
