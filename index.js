@@ -511,9 +511,11 @@ var results_message = {
 		if (objects.results_exit.ready === false  || objects.results_message_cont.ready === false)
 			return;
 		game_res.resources.click.sound.play();
-		await show_ad();
+		
+
 		await results_message.close();
 		await game.close();
+		await show_ad();		
 		main_menu.activate();
 		
 		
@@ -526,8 +528,9 @@ var results_message = {
 		
 		game_res.resources.click.sound.play();
 		
-		await show_ad();
+
 		results_message.close();
+		await show_ad();		
 		game.restart();		
 		
 		
@@ -587,11 +590,14 @@ var	show_ad = async function(){
 	if (game_platform==="YANDEX") {	
 	
 		//показываем рекламу		
-		await new Promise(resolve => {			
-			window.ysdk.adv.showFullscreenAdv({
-			  callbacks: {onClose: function(){resolve('ok')}, onError: function(){resolve('ok2')}}
-			})	
+		window.ysdk.adv.showFullscreenAdv({
+		  callbacks: {
+			onClose: function() {}, 
+			onError: function() {}
+					}
 		})
+		
+		await new Promise(resolve => setTimeout(resolve, 3000));
 	}
 	
 	if (game_platform==="VK") {		
