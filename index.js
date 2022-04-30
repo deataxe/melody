@@ -600,7 +600,7 @@ var	show_ad = async function(){
 			})		
 		
 		
-		}
+		})
 
 
 	}
