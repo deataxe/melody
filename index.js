@@ -589,20 +589,24 @@ var	show_ad = async function(){
 		
 	if (game_platform==="YANDEX") {	
 	
-		//показываем рекламу		
-		window.ysdk.adv.showFullscreenAdv({
-		  callbacks: {
-			onClose: function() {}, 
-			onError: function() {}
-					}
-		})
+		//показываем рекламу
+		await new Promise(function(resolve, reject){	
 		
-		await new Promise(resolve => setTimeout(resolve, 3000));
+			window.ysdk.adv.showFullscreenAdv({
+			  callbacks: {
+				onClose: resolve, 
+				onError: resolve
+						}
+			})		
+		
+		
+		}
+
+
 	}
 	
 	if (game_platform==="VK") {		
 
-		if (rnd()>0.666)
 			await vkBridge.send("VKWebAppShowNativeAds", {ad_format:"interstitial"})
 	}		
 }
