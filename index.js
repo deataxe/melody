@@ -1697,11 +1697,17 @@ var game = {
 		//убираем картинку
 		anim2.add(objects.random_image,{alpha:[0.5, 0]}, false, 1,'linear');		
 
+
+		
 		//убираем падающие ноты
 		await anim2.add(objects.faling_notes_cont,{alpha:[1,0]}, false, 1,'linear');			
 		
 		//убираем контейнер ответов
 		await anim2.add(objects.opt_cont,{y:[objects.opt_cont.y,500]}, true, 1,'easeInBack');			
+		
+		//убираем год
+		anim2.kill_anim(objects.song_year);
+		objects.song_year.visible=false;
 		
 		results_message.show();		
 	},
@@ -1774,7 +1780,7 @@ var game = {
 				break;
 		}
 		
-		//game.song_id = 169;
+		//game.song_id = 170;
 		
 		//добавляем в список недавно прослушанных
 		game.recently_played.push(game.song_id);
@@ -1844,7 +1850,9 @@ var game = {
 			
 			let cor_rate = 	Math.round(100 * correct / guesses);
 			objects.song_year.text = 'Угадывают ' + cor_rate + '%';
+			if (state!=="playing")	return;
 			await anim2.add(objects.song_year,{alpha:[0,1]}, true, 5,'linear');	
+			if (state!=="playing")	return;
 			await anim2.add(objects.song_year,{alpha:[1,0]}, false, 4,'linear');	
 			
 		}
