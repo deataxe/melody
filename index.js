@@ -592,7 +592,7 @@ var	show_ad = async function(){
 		//показываем рекламу
 		await new Promise(function(resolve, reject){	
 			
-			setTimeout(resolve, 5000));	
+			setTimeout(resolve, 5000);	
 			window.ysdk.adv.showFullscreenAdv({
 				  callbacks: {
 					onClose: resolve, 
