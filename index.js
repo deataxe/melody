@@ -1780,7 +1780,7 @@ var game = {
 				break;
 		}
 		
-		//game.song_id = 170;
+		//game.song_id = 208;
 		
 		//добавляем в список недавно прослушанных
 		game.recently_played.push(game.song_id);
@@ -1993,7 +1993,7 @@ var game = {
 			
 			if (objects.game_end_note.y > 360) {
 				//alert(game.avr_dif / game.total_notes)
-				game.no_answer();						
+				//game.no_answer();						
 			}		
 
 		}
