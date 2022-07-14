@@ -332,13 +332,13 @@ class song_opt_class extends PIXI.Container {
 		this.bcg.pointerdown = function(){game.opt_down(cid)};
 		
 		
-		this.artist=new PIXI.BitmapText('-', {fontName: 'Century Gothic', fontSize: 25});		
+		this.artist=new PIXI.BitmapText('-', {fontName: 'Century Gothic', fontSize: 28});		
 		this.artist.anchor.set(0.5,0.5);
 		this.artist.x = w/2;
 		this.artist.y = 30;
 		this.artist.tint =0xddbea9;
 		
-		this.song=new PIXI.BitmapText('-', {fontName: 'Century Gothic', fontSize: 20});		
+		this.song=new PIXI.BitmapText('-', {fontName: 'Century Gothic', fontSize: 23});		
 		this.song.anchor.set(0.5,0.5);
 		this.song.x = w/2;
 		this.song.y = 60;
@@ -1387,7 +1387,7 @@ function load_resources() {
 	game_res.add('instrument_res',git_src+'soundfont/electric_piano_2-ogg.js');
 	
 	
-	game_res.add("m2_font", git_src+"m_font.fnt");
+	game_res.add("m2_font", git_src+"fonts/MS_Comic_Sans/font.fnt");
 
 	game_res.add('message',git_src+'sounds/message.mp3');
 	game_res.add('click',git_src+'sounds/click.mp3');
@@ -1778,7 +1778,7 @@ var game = {
 				break;
 		}
 		
-		//game.song_id = 208;
+		//game.song_id = 214;
 		
 		//добавляем в список недавно прослушанных
 		game.recently_played.push(game.song_id);
