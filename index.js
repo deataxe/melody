@@ -2179,7 +2179,7 @@ quiz={
 	
 	check_song:function(song_name){
 		
-		if (song_name==='БАШНЯ'){
+		if (song_name==='КАК НА ВОЙНЕ'){
 			
 			
 			game_res.resources.applause.sound.play();
@@ -2282,14 +2282,12 @@ quiz={
 	play_song:async function(){
 		
 		//отображаем исполнителя и песню в консоли
-		const song_id=145;
-		let artist = midi_songs[song_id][0];
-		let song = midi_songs[song_id][1];
+
 			
 		game.audio_buffers =[];
 		
 		//загружаем миди файл
-		const midi = await Midi.fromUrl(git_src+"midi/"+song_id+".mid")
+		const midi = await Midi.fromUrl(git_src+"quiz/kaknavoyne.mid")
 		let track_num =0 ;
 		if (midi.tracks.length === 2)
 			track_num = 1;
