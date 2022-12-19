@@ -2421,6 +2421,7 @@ var cat_menu = {
 	},
 	
 	quiz_down:function() {
+		return;
 		
 		if (objects.cat_menu_cont.ready === false)
 			return;
