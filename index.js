@@ -14,6 +14,61 @@ irnd=function(min,max) {
     return Math.floor(Math.random() * (max - min)) + min;
 }
 
+class chat_record_class extends PIXI.Container {
+	
+	constructor() {
+		
+		super();
+		
+		this.tm = 0;
+		this.msg_id = 0;
+		this.msg_index=0;
+		
+		
+		this.msg_bcg = new PIXI.Sprite(gres.msg_bcg.texture);
+		//this.msg_bcg.width=400;
+		//this.msg_bcg.height=50;
+		this.msg_bcg.x=0;
+		this.msg_bcg.anchor.set(0.5);
+
+		
+		this.msg = new PIXI.BitmapText('Имя Фамил124124214', {fontName: 'Century Gothic',fontSize: 20,align: 'left'}); 
+		this.msg.x=225;
+		this.msg.maxWidth=400;
+		this.msg.anchor.set(0.5,0.5);
+		this.msg.tint = 0x111111;
+		
+		this.visible = false;
+		this.addChild(this.msg_bcg,this.msg);
+		
+	}
+	
+	async set(msg, y, inv) {
+						
+		this.y=y;
+		
+		if (inv) {
+			this.msg.x=this.msg_bcg.x=225-irnd(0,50);
+			this.msg_bcg.scale_x=1			
+		}
+
+		else {
+			this.msg.x=this.msg_bcg.x=225+irnd(0,50);
+			this.msg_bcg.scale_x=-1			
+		}
+		
+		//получаем pic_url из фб
+
+		//this.tm = tm;
+					
+		this.msg.text=msg;
+	
+		this.visible = true;	
+		
+	}	
+	
+}
+
 var anim2= {
 		
 	c1: 1.70158,
@@ -57,7 +112,7 @@ var anim2= {
 	},
 	
 	ease2back : function(x) {
-		return Math.sin(x*Math.PI);
+		return Math.sin(x*Math.PI*2);
 	},
 	
 	easeInOutCubic: function(x) {
@@ -1030,6 +1085,100 @@ var rules = {
 	
 }
 
+keyboard={
+	
+	p_resolve : 0,
+	
+	rus_keys : [[20,220,150,260,'<'],[20,70,47.45,110,'Й'],[56.6,70,84.05,110,'Ц'],[93.2,70,120.65,110,'У'],[129.8,70,157.25,110,'К'],[166.4,70,193.85,110,'Е'],[203,70,230.45,110,'Н'],[239.6,70,267.05,110,'Г'],[276.2,70,303.65,110,'Ш'],[312.8,70,340.25,110,'Щ'],[349.4,70,376.85,110,'З'],[386,70,413.45,110,'Х'],[422.6,70,450.05,110,'Ъ'],[38.3,120,65.75,160,'Ф'],[74.9,120,102.35,160,'Ы'],[111.5,120,138.95,160,'В'],[148.1,120,175.55,160,'А'],[184.7,120,212.15,160,'П'],[221.3,120,248.75,160,'Р'],[257.9,120,285.35,160,'О'],[294.5,120,321.95,160,'Л'],[331.1,120,358.55,160,'Д'],[367.7,120,395.15,160,'Ж'],[404.3,120,431.75,160,'Э'],[56.6,170,84.05,210,'Я'],[93.2,170,120.65,210,'Ч'],[129.8,170,157.25,210,'С'],[166.4,170,193.85,210,'М'],[203,170,230.45,210,'И'],[239.6,170,267.05,210,'Т'],[276.2,170,303.65,210,'Ь'],[312.8,170,340.25,210,'Б'],[349.4,170,376.85,210,'Ю'],[171,220,301,260,'_'],[321.9,220,449.99,260,'ПРОВЕРИТЬ']],	
+	
+	open: function(){
+				
+		//anim2.add(objects.keyboard_cont,{y:[950, objects.keyboard_cont.sy]}, true, 1,'linear');
+				
+		return new Promise(function(resolve, reject){					
+			keyboard.p_resolve = resolve;	  		  
+		});
+		
+	},
+		
+	close:function(){
+		
+		//anim2.add(objects.keyboard_cont,{y:[objects.keyboard_cont.y,950]}, false, 1,'linear');
+		
+	},
+	
+	keydown:function(){
+				
+		
+		
+	},
+	
+	pointerdown:function(e){
+		
+		let key = -1;
+		let key_x = 0;
+		let key_y = 0;	
+		
+		let mx = e.data.global.x/app.stage.scale.x - objects.keyboard.x;
+		let my = e.data.global.y/app.stage.scale.y - objects.keyboard.y;
+		
+		let margin = 5;
+		for (let k of this.rus_keys) {			
+			if (mx > k[0] - margin && mx <k[2] + margin  && my > k[1] - margin && my < k[3] + margin) {
+				key = k[4];
+				key_x = k[0];
+				key_y = k[1];
+				break;
+			}
+		}	
+				
+				
+				
+		if (key === -1) return;	
+		
+		//подсвечиваем клавишу
+		objects.hl_key.x = objects.keyboard.x+key_x - 10;
+		objects.hl_key.y = objects.keyboard.y+key_y - 10;		
+		if (key === 'ПРОВЕРИТЬ' || key === '_' || key === '<')
+			objects.hl_key.texture = gres.hl_key1.texture;
+		else
+			objects.hl_key.texture = gres.hl_key0.texture;	
+		
+		anim2.add(objects.hl_key,{alpha:[1, 0]}, false, 0.5,'linear');
+		
+		if (key === 'ПРОВЕРИТЬ') {
+			
+			if (objects.song_name.text === '') return;
+			quiz.check_song(objects.song_name.text);
+			objects.song_name.text='';
+			return;	
+		}			
+		
+		if (objects.song_name.text.length>20) return;	
+				
+		if (key === '<') {
+			objects.song_name.text=objects.song_name.text.slice(0, -1);
+			key ='';
+		}	
+		if (key === '_') key=' ';
+			
+
+		
+		if (key === 'ЗАКРЫТЬ') {
+			
+			//this.close();
+			//this.p_resolve('');	
+			//return;	
+		}	
+
+		objects.song_name.text += key;	
+	
+		
+	}
+	
+	
+}
+
 async function get_midi_stats() {
 	
 	for (let i = 0 ; i < Object.keys(midi_songs).length ; i++) {
@@ -1544,8 +1693,7 @@ var game = {
 	player : {},
 	my_shift : 0,
 	audio_buffers :[],
-	
-	
+		
 	notes_buffer : {},
 	note_id : 0,
 
@@ -1583,19 +1731,6 @@ var game = {
 	  })
 	},
 	
-	dec_shift : () => {
-		
-		game.my_shift -=0.01;
-		objects.shift_t.text = game.my_shift;
-		
-	},
-	
-	inc_shift : () => {
-		
-		game.my_shift +=0.01;
-		objects.shift_t.text = game.my_shift;
-	},
-		
 	show_lights: async() => {
 		
 				
@@ -1696,7 +1831,6 @@ var game = {
 		//убираем картинку
 		anim2.add(objects.random_image,{alpha:[0.5, 0]}, false, 1,'linear');		
 
-
 		
 		//убираем падающие ноты
 		await anim2.add(objects.faling_notes_cont,{alpha:[1,0]}, false, 1,'linear');			
@@ -1778,7 +1912,7 @@ var game = {
 				break;
 		}
 		
-		//game.song_id = 214;
+		//game.song_id = 230;
 		
 		//добавляем в список недавно прослушанных
 		game.recently_played.push(game.song_id);
@@ -1943,7 +2077,7 @@ var game = {
 		await anim2.add(objects.faling_notes_cont,{alpha:[0,1]}, true, 1,'linear');	
 		
 	},
-	
+			
 	add_sparkle : (x, duration) => {
 				
 		for (let i =0 ; i<objects.sparkles.length ; i++ ) {
@@ -1995,6 +2129,8 @@ var game = {
 			}		
 
 		}
+		
+
 
 	},
 	
@@ -2016,8 +2152,241 @@ var game = {
 		game.activate();
 		
 	}
-			
 	
+}
+
+quiz={
+	
+	notes_data:[],
+	start_time:0,
+	winner_id:-1,
+		
+	activate:function(){
+		
+		objects.record_note_cont.visible=false;
+		
+		objects.quiz_cont.visible=true;
+		
+		this.update_winner_info();
+		
+		this.show_last_messages();
+		
+		this.play_song();
+		
+		keyboard.open();
+
+	},
+	
+	check_song:function(song_name){
+		
+		if (song_name==='БАШНЯ'){
+			game_res.resources.applause.sound.play();
+			objects.winner_plot.texture=gres.quiz_winner_bcg.texture;
+			objects.winner_name.text=my_data.name;
+			firebase.database().ref("quiz_winner_uid").set(my_data.uid);
+			objects.quiz_winner_cont.visible=true;
+			
+			if (this.winner_id===-1)
+				this.add_message('Верно! Вы выиграли конкурс!');
+			else
+				this.add_message('Верно! Но конкурс уже завершен!');
+				
+		}else{
+			
+			this.add_message('Неверно!');
+			game_res.resources.locked.sound.play();
+			anim2.add(objects.quiz_cont,{x:[0, 10]}, true, 0.25,'ease2back');
+			firebase.database().ref("quiz_chat/"+irnd(0,50)).set({song_name:objects.song_name.text,tm:firebase.database.ServerValue.TIMESTAMP});			
+		}
+		
+		
+	},
+	
+	add_message:function(msg){
+		
+		objects.quiz_message.text=msg;
+		anim2.add(objects.quiz_message,{alpha:[1, 0]}, false, 5,'linear');
+		
+		
+	},
+	
+	update_winner_info:async function(){
+		
+		this.winner_id=await firebase.database().ref("quiz_winner_uid").once('value');
+		this.winner_id=this.winner_id.val();
+		if (this.winner_id==='-1' ) this.winner_id=-1;
+		
+		
+		if (this.winner_id===-1 ){
+			objects.quiz_winner_cont.visible=false;
+			objects.winner_plot.texture=gres.no_quiz_winner_bcg.texture;
+			objects.winner_name.text=''			
+		}else{
+			objects.winner_plot.texture=gres.quiz_winner_bcg.texture;
+			objects.quiz_winner_cont.visible=true;
+			let winner_data=await firebase.database().ref("players/"+this.winner_id).once('value');
+			winner_data=winner_data.val();
+			objects.winner_name.text=winner_data.name;			
+			const winner_avatar=await this.get_texture(winner_data.pic_url);
+			objects.quiz_winner_avatar.texture=winner_avatar;
+
+		}
+		
+	},
+	
+	show_last_messages:async function(){
+		
+		let chat_data=await firebase.database().ref("quiz_chat").once('value');
+		chat_data=chat_data.val();
+		chat_data=Object.values(chat_data);
+		chat_data = chat_data.sort((a, b) => b.tm-a.tm);
+		console.log(chat_data);
+		
+		for (let i=0;i<5;i++)
+		  objects.chat_records[i].set(chat_data[i].song_name,i*40+300,i % 2 == 0);
+
+		
+	},
+	
+	get_texture : function (pic_url) {
+		
+		return new Promise((resolve,reject)=>{
+			
+
+			//сначала смотрим на загруженные аватарки в кэше
+			if (PIXI.utils.TextureCache[pic_url]===undefined || PIXI.utils.TextureCache[pic_url].width===1) {
+
+				//загружаем аватарку игрока
+				//console.log(`Загружаем url из интернети или кэша браузера ${pic_url}`)	
+				let loader=new PIXI.Loader();
+				loader.add("pic", pic_url,{loadType: PIXI.LoaderResource.LOAD_TYPE.IMAGE, timeout: 5000});
+				loader.load(function(l,r) {	resolve(l.resources.pic.texture)});
+			}
+			else
+			{
+				//загружаем текустуру из кэша
+				//console.log(`Текстура взята из кэша ${pic_url}`)	
+				resolve (PIXI.utils.TextureCache[pic_url]);
+			}
+		})
+		
+	},
+	
+	play_song:async function(){
+		
+		//отображаем исполнителя и песню в консоли
+		const song_id=145;
+		let artist = midi_songs[song_id][0];
+		let song = midi_songs[song_id][1];
+			
+		game.audio_buffers =[];
+		
+		//загружаем миди файл
+		const midi = await Midi.fromUrl(git_src+"midi/"+song_id+".mid")
+		let track_num =0 ;
+		if (midi.tracks.length === 2)
+			track_num = 1;
+		
+		const notes = midi.tracks[track_num].notes;	
+				
+		//это время всей песни (когда кончается последняя нота)
+		let last_note_id = notes.length - 1;
+		game.song_time = notes[last_note_id].time + notes[last_note_id].duration;
+				
+		//создаем расписание нот в аудиобуффер
+		this.notes_data=[]		
+		notes.forEach(note => {
+			game.add_note(noteToKey[note.midi], note.time, note.duration);	
+			this.notes_data.push({play_time:note.time,played:false})			
+		})	
+				
+		state='quiz_playing';
+		this.start_time = Date.now();
+		objects.quiz_replay_button.visible=false;
+		g_process=this.process.bind(quiz);
+	},
+	
+	play_down:function(){
+		
+		if (state==='quiz_playing')
+			return;
+		
+		this.play_song();
+	},
+	
+	add_sparkle : () => {
+				
+		for (let i =0 ; i<objects.sparkles.length ; i++ ) {
+			if (objects.sparkles[i].visible === false) {				
+			
+				objects.sparkles[i].y = irnd(0,540);
+				objects.sparkles[i].x = irnd(0,450);				
+					
+				anim2.add(objects.sparkles[i],{alpha:[1, 0],scale_xy:[0, 4]}, false, 1,'linear');
+				return;
+			}			
+		}
+		
+		
+	},
+	
+	process:async function(){
+		
+
+		let dif = (Date.now() - this.start_time) * 0.001;
+		
+		let all_played=true;
+		for (let note of this.notes_data) {		
+			if (note.played ===false){
+				
+				if (dif>note.play_time) {
+					//console.log('played');
+					this.add_sparkle();
+					note.played=true;					
+				}				
+				all_played=false;
+			}
+		}	
+
+		if (all_played===true){
+			
+			state='';
+			objects.quiz_replay_button.visible=true;
+			g_process=function(){};
+			
+			
+			
+		}
+		
+	},
+	
+	back_down:function(){
+		
+		
+		
+		
+		this.close();
+		main_menu.activate();
+		
+	},
+	
+	close:function(){
+		
+		//останавливаем и удаляем звуки
+		game.audio_buffers.forEach(b=>{
+			b.stop();
+		});		
+		game.audio_buffers = [];
+		g_process=function(){};
+		
+		objects.record_note_cont.visible=true;
+		keyboard.close();
+		
+		objects.quiz_cont.visible=false;
+
+		
+	}
+		
 }
 
 var cat_menu = {
@@ -2043,6 +2412,17 @@ var cat_menu = {
 		game.activate();
 		
 		
+		
+	},
+	
+	quiz_down:function() {
+		
+		if (objects.cat_menu_cont.ready === false)
+			return;
+		
+		game_res.resources.click.sound.play();
+		cat_menu.close();
+		quiz.activate();
 		
 	},
 	
