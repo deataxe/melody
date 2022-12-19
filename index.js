@@ -2180,16 +2180,23 @@ quiz={
 	check_song:function(song_name){
 		
 		if (song_name==='БАШНЯ'){
+			
+			
 			game_res.resources.applause.sound.play();
 			objects.winner_plot.texture=gres.quiz_winner_bcg.texture;
-			objects.winner_name.text=my_data.name;
-			firebase.database().ref("quiz_winner_uid").set(my_data.uid);
+			
 			objects.quiz_winner_cont.visible=true;
 			
-			if (this.winner_id===-1)
-				this.add_message('Верно! Вы выиграли конкурс!');
-			else
-				this.add_message('Верно! Но конкурс уже завершен!');
+			if (this.winner_id===-1){
+				this.add_message('Верно! Вы выиграли конкурс!');				
+				firebase.database().ref("quiz_winner_uid").set(my_data.uid);
+				objects.winner_name.text=my_data.name;		
+				
+			}else{
+				
+				this.add_message('Верно! Но конкурс уже завершен!');				
+			}
+
 				
 		}else{
 			
