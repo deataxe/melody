@@ -2159,15 +2159,17 @@ quiz={
 	
 	notes_data:[],
 	start_time:0,
-	winner_id:-1,
+	quiz_data:{},
 		
-	activate:function(){
+	activate:async function(){
 		
 		objects.record_note_cont.visible=false;
 		
-		objects.quiz_cont.visible=true;
+
 		
-		this.update_winner_info();
+		await this.read_quiz_info();
+		
+		objects.quiz_cont.visible=true;		
 		
 		this.show_last_messages();
 		
@@ -2179,7 +2181,7 @@ quiz={
 	
 	check_song:function(song_name){
 		
-		if (song_name==='КАК НА ВОЙНЕ'){
+		if (song_name===this.quiz_data.song_name){
 			
 			
 			game_res.resources.applause.sound.play();
@@ -2187,14 +2189,15 @@ quiz={
 			
 			objects.quiz_winner_cont.visible=true;
 			
-			if (this.winner_id===-1){
-				this.add_message('Верно! Вы выиграли конкурс!');				
-				firebase.database().ref("quiz_winner_uid").set(my_data.uid);
+			if (this.quiz_data.winner_id==='not_defined_yet'){
+				this.quiz_data.winner_id=my_data.uid;
+				this.add_message('Верно! Вы выиграли конкурс!\n'+this.quiz_data.artist+'-'+this.quiz_data.song_name);				
+				firebase.database().ref("quiz_data/winner_id").set(my_data.uid);
 				objects.winner_name.text=my_data.name;		
 				
 			}else{
 				
-				this.add_message('Верно! Но конкурс уже завершен!');				
+				this.add_message('Верно! Но конкурс уже завершен!\n'+this.quiz_data.artist+'-'+this.quiz_data.song_name);				
 			}
 
 				
@@ -2203,7 +2206,8 @@ quiz={
 			this.add_message('Неверно!');
 			game_res.resources.locked.sound.play();
 			anim2.add(objects.quiz_cont,{x:[0, 10]}, true, 0.25,'ease2back');
-			firebase.database().ref("quiz_chat/"+irnd(0,50)).set({song_name:objects.song_name.text,tm:firebase.database.ServerValue.TIMESTAMP});			
+			
+			firebase.database().ref("quiz_chat/"+irnd(0,50)).set({song_name:objects.song_name.text,name:my_data.name,tm:firebase.database.ServerValue.TIMESTAMP});			
 		}
 		
 		
@@ -2217,21 +2221,19 @@ quiz={
 		
 	},
 	
-	update_winner_info:async function(){
+	read_quiz_info:async function(){
 		
-		this.winner_id=await firebase.database().ref("quiz_winner_uid").once('value');
-		this.winner_id=this.winner_id.val();
-		if (this.winner_id==='-1' ) this.winner_id=-1;
-		
-		
-		if (this.winner_id===-1 ){
+		this.quiz_data=await firebase.database().ref("quiz_data").once('value');
+		this.quiz_data=this.quiz_data.val();
+
+		if (this.quiz_data.winner_id==='not_defined_yet' ){
 			objects.quiz_winner_cont.visible=false;
 			objects.winner_plot.texture=gres.no_quiz_winner_bcg.texture;
 			objects.winner_name.text=''			
 		}else{
 			objects.winner_plot.texture=gres.quiz_winner_bcg.texture;
 			objects.quiz_winner_cont.visible=true;
-			let winner_data=await firebase.database().ref("players/"+this.winner_id).once('value');
+			let winner_data=await firebase.database().ref("players/"+this.quiz_data.winner_id).once('value');
 			winner_data=winner_data.val();
 			objects.winner_name.text=winner_data.name;			
 			const winner_avatar=await this.get_texture(winner_data.pic_url);
@@ -2282,12 +2284,11 @@ quiz={
 	play_song:async function(){
 		
 		//отображаем исполнителя и песню в консоли
-
 			
 		game.audio_buffers =[];
 		
 		//загружаем миди файл
-		const midi = await Midi.fromUrl(git_src+"quiz/kaknavoyne.mid")
+		const midi = await Midi.fromUrl(git_src+"quiz/"+this.quiz_data.file_name)
 		let track_num =0 ;
 		if (midi.tracks.length === 2)
 			track_num = 1;
@@ -2421,7 +2422,6 @@ var cat_menu = {
 	},
 	
 	quiz_down:function() {
-		return;
 		
 		if (objects.cat_menu_cont.ready === false)
 			return;
