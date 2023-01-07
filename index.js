@@ -2235,7 +2235,7 @@ quiz={
 			objects.quiz_winner_cont.visible=true;
 			let winner_data=await firebase.database().ref("players/"+this.quiz_data.winner_id).once('value');
 			winner_data=winner_data.val();
-			objects.winner_name.text=winner_data.name;			
+			objects.winner_name.text=winner_data.name.replace(/[ё]/gi, 'e');
 			const winner_avatar=await this.get_texture(winner_data.pic_url);
 			objects.quiz_winner_avatar.texture=winner_avatar;
 
