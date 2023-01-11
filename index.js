@@ -1,4 +1,4 @@
-var M_WIDTH = 450, M_HEIGHT = 800, game_platform="", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="", audio_context, git_src, last_com_time=0;
+var M_WIDTH = 450, M_HEIGHT = 800, game_platform="VK", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="", audio_context, git_src, last_com_time=0;
 var g_process = () => {};
 var g_instrument ={};
 var instruments_names = ['acoustic_grand_piano','acoustic_guitar_nylon','acoustic_guitar_steel','electric_guitar_jazz','electric_piano_2','pad_1_new_age','koto','fx_1_rain','fx_3_crystal','fx_4_atmosphere','synth_brass_1','harpsichord','vibraphone'];
@@ -1470,7 +1470,7 @@ var instruments_dialog = {
 	update_instrument : async () => {
 		
 		let instrument_loader = new PIXI.Loader();
-		instrument_loader.add('instrument_res','https://akukamil.github.io/melody/soundfont/' +  instruments_names[instruments_dialog.selected_id] + '-ogg.js',{timeout: 5000});
+		instrument_loader.add('instrument_res','https://deataxe.github.io/melody/soundfont/' +  instruments_names[instruments_dialog.selected_id] + '-ogg.js',{timeout: 5000});
 		
 		//показываем кнопку перезагрузки
 		objects.instruments_ok_button.interactive = false;
@@ -1530,7 +1530,7 @@ function load_resources() {
 	//короткая ссылка на ресурсы
 	gres=game_res.resources;
 	
-	git_src="https://akukamil.github.io/melody/"
+	git_src="https://deataxe.github.io/melody/"
 	//git_src=""
 	
 	game_res.add('instrument_res',git_src+'soundfont/electric_piano_2-ogg.js');
