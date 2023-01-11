@@ -1,4 +1,4 @@
-var M_WIDTH = 450, M_HEIGHT = 800, game_platform="", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="", audio_context, git_src, last_com_time=0;
+var M_WIDTH = 450, M_HEIGHT = 800, game_platform="VK", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="", audio_context, git_src, last_com_time=0;
 var g_process = () => {};
 var g_instrument ={};
 var instruments_names = ['acoustic_grand_piano','acoustic_guitar_nylon','acoustic_guitar_steel','electric_guitar_jazz','electric_piano_2','pad_1_new_age','koto','fx_1_rain','fx_3_crystal','fx_4_atmosphere','synth_brass_1','harpsichord','vibraphone'];
