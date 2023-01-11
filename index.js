@@ -1,4 +1,4 @@
-var M_WIDTH = 450, M_HEIGHT = 800, game_platform="VK", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="", audio_context, git_src, last_com_time=0;
+var M_WIDTH = 450, M_HEIGHT = 800, game_platform="", app, gres, objects = {}, my_data = {}, game_tick = 0, state ="", audio_context, git_src, last_com_time=0;
 var g_process = () => {};
 var g_instrument ={};
 var instruments_names = ['acoustic_grand_piano','acoustic_guitar_nylon','acoustic_guitar_steel','electric_guitar_jazz','electric_piano_2','pad_1_new_age','koto','fx_1_rain','fx_3_crystal','fx_4_atmosphere','synth_brass_1','harpsichord','vibraphone'];
@@ -1206,13 +1206,14 @@ async function init_game_env() {
 	//инициируем файербейс
 	if (firebase.apps.length===0) {
 		firebase.initializeApp({
-			apiKey: "AIzaSyBG9xnBLS3eGtn7gy58hNVJBSBVUymxA0I",
-			authDomain: "melody-4ab2b.firebaseapp.com",
-			databaseURL: "https://melody-4ab2b-default-rtdb.europe-west1.firebasedatabase.app",
-			projectId: "melody-4ab2b",
-			storageBucket: "melody-4ab2b.appspot.com",
-			messagingSenderId: "950545734258",
-			appId: "1:950545734258:web:bddf99bf8907891702c0eb"
+    apiKey: "AIzaSyAYr2Dhi2IXnd5PoEgWdSqWxX15CqLcGDM",
+    authDomain: "melody33-a72ea.firebaseapp.com",
+    databaseURL: "https://melody33-a72ea-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "melody33-a72ea",
+    storageBucket: "melody33-a72ea.appspot.com",
+    messagingSenderId: "523639630298",
+    appId: "1:523639630298:web:bbbc6e4d9b3674515878e3",
+    measurementId: "G-L290EDV0TG"
 		});
 	}
 						
@@ -2521,4 +2522,3 @@ var main_menu = {
 	}
 	
 }
-
