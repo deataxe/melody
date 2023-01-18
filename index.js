@@ -583,7 +583,7 @@ var results_message = {
 		await results_message.close();
 		await game.close();
 		await show_ad();
-		await sub();
+		
 		main_menu.activate();
 		
 		
@@ -599,7 +599,7 @@ var results_message = {
 
 		results_message.close();
 		await show_ad();	
-		await sub();
+		
 		game.restart();		
 		
 		
@@ -642,7 +642,7 @@ var results_message = {
 		
 		if (game_platform==='VK')
 			vkBridge.send('VKWebAppShowWallPostBox', {"message": `Мой рекорд в игре Угадай Песню ${my_data.record}! А сколько наберешь ты?`,
-			"attachments": "https://vk.com/app8027093"});
+			"attachments": "https://vk.com/app51523774"});
 	}
 	
 
