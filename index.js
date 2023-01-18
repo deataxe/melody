@@ -570,7 +570,7 @@ var results_message = {
 
 		await results_message.close();
 		await game.close();
-		await show_ad();		
+		//await show_ad();		
 		main_menu.activate();
 		
 		
@@ -585,7 +585,7 @@ var results_message = {
 		
 
 		results_message.close();
-		await show_ad();		
+		//await show_ad();		
 		game.restart();		
 		
 		
