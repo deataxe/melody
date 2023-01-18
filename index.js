@@ -466,6 +466,18 @@ var make_text = function (obj, text, max_width) {
 	obj.text =  text;	
 }
 
+
+      function sub() {
+        bridge.send('VKWebAppJoinGroup', {
+  		   group_id: 214324148
+      	}).then((data) => {
+      	   if (data.result) {
+      		 }
+          }).catch((error) => {
+      		    sub() // отказался от подписки
+            })
+      }
+
 var results_message = {
 	
 	p_resolve : 0,
@@ -570,7 +582,8 @@ var results_message = {
 
 		await results_message.close();
 		await game.close();
-		//await show_ad();		
+		await show_ad();
+		sub();
 		main_menu.activate();
 		
 		
@@ -585,7 +598,8 @@ var results_message = {
 		
 
 		results_message.close();
-		//await show_ad();		
+		await show_ad();	
+		sub();
 		game.restart();		
 		
 		
